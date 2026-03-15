@@ -232,6 +232,15 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Space Mono',monospa
 .x-desc{font-size:9px;color:var(--txt2);line-height:1.7;margin-bottom:10px;border-left:2px solid var(--bdr2);padding-left:10px}
 .x-tweet{background:var(--bg3);padding:8px 10px;font-size:9px;color:var(--txt2);line-height:1.6;margin-bottom:10px;border-left:2px solid rgba(0,212,255,.3);font-style:italic}
 .x-actions{display:flex;gap:7px;align-items:center;border-top:1px solid var(--bdr);padding-top:10px}
+/* Credibility bubble */
+.cred-bubble{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px solid;font-family:'Space Mono',monospace;cursor:default;z-index:2}
+.cred-bubble .cb-num{font-size:11px;font-weight:700;line-height:1}
+.cred-bubble .cb-lbl{font-size:6px;opacity:.7;line-height:1;margin-top:1px}
+.cred-bubble-5{color:#3df78e;border-color:#3df78e;background:rgba(61,247,142,.10)}
+.cred-bubble-4{color:#b8f53d;border-color:#b8f53d;background:rgba(184,245,61,.10)}
+.cred-bubble-3{color:var(--wrn);border-color:var(--wrn);background:var(--wrn-d)}
+.cred-bubble-2{color:var(--dng);border-color:var(--dng);background:var(--dng-d)}
+.cred-bubble-1{color:var(--dng);border-color:var(--dng);background:var(--dng-d)}
 .x-act-btn{font-family:'Space Mono',monospace;font-size:8px;padding:5px 10px;border:1px solid var(--bdr);background:transparent;cursor:pointer;transition:all .15s;text-decoration:none;display:inline-block;color:var(--txt2)}
 .x-act-btn:hover{border-color:var(--acc2);color:var(--acc2)}
 .x-score-mini{margin-left:auto;font-size:10px;font-weight:700}
@@ -1548,8 +1557,8 @@ function startXScan() {
   document.getElementById('xMain').innerHTML = buildProgLoadingHtml('𝕏 SCAN MULTI-SOURCES', ['Étape 1/2 — Recherche X, Google, YouTube, Reddit, Discord, crypto news...', 'Étape 2/2 — Synthèse & formatage JSON...'], 'var(--acc2)');
   scanProgStart(200, 'var(--acc2)');
 
-  var searchMsg = 'Search across X/Twitter, Google, YouTube, Reddit, Discord, and crypto news sites (CoinDesk, The Block, Decrypt, DeFiLlama, CryptoSlate) for crypto projects announcing token launches, TGE, or airdrops for ' + NOW_YEAR + ' and ' + NEXT_YEAR + '. Query: "' + query + '". Find 10+ projects. For each project synthesize ALL sources found:\n- Exact TGE/launch date or range (and which source confirms it)\n- Airdrop % of total supply allocated to community\n- FDV estimate compared to similar projects in the SAME category (e.g. if it is a DEX compare with Uniswap/dYdX, if L2 compare with Arbitrum/Optimism, if AI infra compare with Render/Akash)\n- Account age, followers, funding raised, investors\nDistinguish ANNOUNCED TGE (official from team) vs RUMORED TGE (community speculation). Rate credibility 1-5 for each field. Write detailed multi-source report covering 10+ projects.';
-  var fmtMsg2 = function(r) { return 'Format as JSON. ONLY JSON start with {:\n\nRESEARCH:\n' + r.slice(0,9000) + '\n\n{"projects":[{"name":"Name","ticker":"TICK","handle":"@h","followers":"50000","account_age":"2yr","verified":false,"status":"tge","is_rumor":false,"credibility":null,"credibility_reason":"","launch_date":"Q2 ' + NOW_YEAR + '","blockchain":"Ethereum","category":"DEX","description":"Desc.","recent_tweet":"Tweet.","score":8,"funding":"$50M","investors":"a16z","is_top_pick":false,"tge_date":"Q2 ' + NOW_YEAR + '","tge_credibility":4,"tge_source":"Official blog post","airdrop_pct":15,"airdrop_credibility":3,"airdrop_source":"Community speculation on Discord","fdv_estimate":"$500M","fdv_credibility":3,"fdv_comparable":"Similar DEX: Uniswap $3B, dYdX $400M — estimate in range","socials":{"twitter":"https://twitter.com/h","website":"https://site.com"},"red_flags":["r"],"green_flags":["g"],"logo_url":""}]}\n\nRules:\n- status: launch/tge/soon/airdrop/' + NEXT_YEAR + '/rumor/presale\n- is_rumor:true for unconfirmed\n- credibility 1-5 for rumors (null for confirmed)\n- is_top_pick:true for score>=8 AND both tge_credibility>=4 AND airdrop_pct known\n- category: DEX/L2/AI/GameFi/DeFi/Infra/Meme/etc\n- tge_credibility/airdrop_credibility/fdv_credibility each 1-5\n- Include 10+ projects minimum\nStart with {:'; };
+  var searchMsg = 'TODAY IS ' + NOW_YEAR + '-03 (March ' + NOW_YEAR + '). Search across X/Twitter OFFICIAL accounts, official project websites, official blogs, Discord announcements, CoinDesk, The Block, Decrypt, DeFiLlama for crypto projects announcing token launches, TGE, or airdrops. Query: "' + query + '". CRITICAL: For EACH TGE date found, you MUST cross-verify by searching the project\'s OFFICIAL Twitter and website for their LATEST announcement — do NOT use old news. If official sources say March ' + NOW_YEAR + ' or Q1 ' + NOW_YEAR + ', report that, not older dates. Find 10+ projects:\n- Exact TGE/launch date (verified from official source, name that source)\n- Airdrop % of total supply allocated to community\n- FDV estimate vs competitors in same category\n- Account age, followers, funding, investors\nDistinguish CONFIRMED (official team announcement) vs RUMORED (community speculation). For each field rate credibility 1-5 where 5=official confirmed, 4=multiple reliable sources, 3=single source, 2=community rumor, 1=unverified. Rate overall_credibility 1-5. Write detailed multi-source report covering 10+ projects.';
+  var fmtMsg2 = function(r) { return 'Format as JSON. ONLY JSON start with {:\n\nRESEARCH:\n' + r.slice(0,9000) + '\n\n{"projects":[{"name":"Name","ticker":"TICK","handle":"@h","followers":"50000","account_age":"2yr","verified":false,"status":"tge","is_rumor":false,"credibility":null,"credibility_reason":"","overall_credibility":4,"launch_date":"March ' + NOW_YEAR + '","blockchain":"Ethereum","category":"DEX","description":"Desc.","recent_tweet":"Tweet.","score":8,"funding":"$50M","investors":"a16z","is_top_pick":false,"tge_date":"March ' + NOW_YEAR + '","tge_credibility":5,"tge_source":"Official tweet @project March ' + NOW_YEAR + '","airdrop_pct":15,"airdrop_credibility":3,"airdrop_source":"Community Discord","fdv_estimate":"$500M","fdv_credibility":3,"fdv_comparable":"Similar DEX: Uniswap $3B — estimate in range","socials":{"twitter":"https://twitter.com/h","website":"https://site.com"},"red_flags":["r"],"green_flags":["g"],"logo_url":""}]}\n\nRules:\n- TODAY IS MARCH ' + NOW_YEAR + ' — use accurate dates from research, do NOT invent future dates\n- tge_date must reflect the LATEST official announcement (if research says March ' + NOW_YEAR + ', use that)\n- status: launch/tge/soon/airdrop/' + NEXT_YEAR + '/rumor/presale\n- is_rumor:true for unconfirmed\n- overall_credibility 1-5 (5=official confirmed with source, 4=multiple reliable, 3=one source, 2=rumor, 1=unverified)\n- credibility 1-5 for rumors (null for confirmed)\n- is_top_pick:true for score>=8 AND tge_credibility>=4 AND airdrop_pct known\n- tge_credibility/airdrop_credibility/fdv_credibility each 1-5\n- Include 10+ projects minimum\nStart with {:'; };
 
   var xDone = function() {
     xScanning = false;
@@ -1605,11 +1614,18 @@ function renderX() {
     var isTop = p.is_top_pick || (p.score >= 8);
     var cardClass = 'x-card' + (isTop ? ' x-card-top' : '');
 
-    // Overall rumor credibility (legacy field)
-    var credHtml = '';
-    if (p.is_rumor && p.credibility) {
-      credHtml = '<div style="display:flex;align-items:center;gap:3px;margin:4px 0 2px">' + credStars(p.credibility, 5) + '<span style="font-size:8px;color:var(--mut);margin-left:5px">crédibilité globale</span></div>';
+    // Overall credibility bubble (top-right corner)
+    var oc = p.overall_credibility || p.credibility || (p.is_rumor ? null : 4);
+    if (!oc && (p.tge_credibility || p.airdrop_credibility)) {
+      var vals = [p.tge_credibility, p.airdrop_credibility, p.fdv_credibility].filter(function(v){return v>0;});
+      if (vals.length) oc = Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length);
     }
+    var credBubble = '';
+    if (oc) {
+      var ocCls = 'cred-bubble cred-bubble-' + Math.min(5,Math.max(1,oc|0));
+      credBubble = '<div class="' + ocCls + '" title="Crédibilité ' + oc + '/5"><span class="cb-num">' + (oc|0) + '/5</span><span class="cb-lbl">CRED</span></div>';
+    }
+    var credHtml = '';
 
     // Per-field synthesis block
     var synthHtml = '';
@@ -1635,6 +1651,7 @@ function renderX() {
     }
 
     return '<div class="' + cardClass + '" style="animation-delay:' + (i*0.04) + 's" id="xcard_' + i + '">' +
+      credBubble +
       (isTop ? '<div class="x-top-badge">⭐ TOP PICK</div>' : '') +
       '<div class="x-card-hdr"><div class="x-logo-ph" style="' + (isTop ? 'border-color:#f5c518;background:rgba(245,197,24,.12);color:#f5c518' : '') + '">' + sym + '</div>' +
       '<div style="flex:1;min-width:0"><div class="x-proj-name">' + esc(p.name) +
@@ -2828,8 +2845,8 @@ function startProjectSearch() {
     })
     .then(function(jr) {
       clearInterval(stepInt);
-      var parsed = extractJSON(jr, 'project');
-      if (!parsed || !parsed.project) throw new Error('JSON vide');
+      var parsed = extractJSONObj(jr, 'project');
+      if (!parsed || !parsed.project) throw new Error('JSON vide — réessayez');
       renderProjectSearch(parsed.project);
     })
     .catch(function(e) {
