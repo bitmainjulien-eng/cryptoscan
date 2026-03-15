@@ -1503,7 +1503,7 @@ function startScan() {
   var steps = ['Étape 1/2 — Recherche web...','Analyse créateurs...','Traçage contrats...','Étape 2/2 — Formatage JSON...','Génération courbes...'];
   var si = 0;
   document.getElementById('scanMain').innerHTML = buildProgLoadingHtml('⬡ DEEP SCAN EN COURS', steps, 'var(--acc)');
-  scanProgStart(180, 'var(--acc)');
+  scanProgStart(120, 'var(--acc)');
   var st = setInterval(function() {
     var el = document.getElementById('ss_' + si);
     if (el) el.classList.remove('active');
@@ -1512,15 +1512,9 @@ function startScan() {
     if (el2) el2.classList.add('active');
   }, 2000);
 
-  var searchMsg = 'Search for 20+ real crypto tokens newly listed in the last 48-72h on ' + srcs.join(', ') + '. For each find: name, ticker, blockchain, listing time, price, market cap, volume, liquidity, contract address, creator Twitter/followers, any scam history, audit status, LP lock. IMPORTANT ANTI-SCAM CHECK: for every website URL you include, verify it is the OFFICIAL project domain (not a phishing clone). Cross-reference with official Twitter/X announcements, CMC/CoinGecko listings. Write a detailed factual report covering at least 20 distinct projects.';
+  var searchMsg = 'Search for 20+ real crypto tokens newly listed in the last 48-72h on ' + srcs.join(', ') + '. ANTI-SCAM: verify every website URL is the OFFICIAL domain (cross-reference Twitter/CMC/CoinGecko). Return ONLY valid JSON starting with {, no text outside:\n{"tokens":[{"name":"Name","ticker":"TICK","chain":"Solana","age":"6h","score":7,"sources":["DexScreener"],"summary":"Description.","stats":{"MKT CAP":"$1M","VOL 24H":"$200K","PRIX":"$0.01","LIQUID.":"$150K"},"signals":[{"type":"pos","text":"positive"},{"type":"neg","text":"risk"},{"type":"neu","text":"neutral"}],"socials":{"twitter":"https://twitter.com/h","linkedin":"","youtube":"","website":"https://officialsite.com"},"creator":{"twitter":"@h","twitter_followers":"5000","twitter_age":"1yr","previous_tokens":["T(yr,result)"],"scam_history":"None","wallet_age":"1yr","doxxed":false,"team_size":"3","linkedin_verified":false,"red_flags":["r"],"green_flags":["g"]},"contract":{"address":"0x","verified":true,"renounced":false,"honeypot":false,"mint_disabled":true,"lp_locked":"6mo","top10_holders":"45%","dev_wallet":"3%","suspicious_txs":0,"linked_contracts":["CA"]},"market_context":"Context.","logo_url":"","price_curve":[0.01,0.012,0.015,0.018,0.016,0.021,0.025,0.023,0.028,0.032,0.036,0.04],"price_labels":["D","M1","M2","M3","M4","M5","M6","M7","M8","M9","M10","M12"]}]}\nRules: score 1-10. price_curve=12 realistic values. 20+ tokens minimum. Start with {:';
 
-  callAPI([{role:'user', content: searchMsg}], true, 6000)
-    .then(function(research) {
-      log('Recherche terminée — formatage...', 'i');
-      scanProgAdvance(62, 90);
-      var fmtMsg = 'Format this crypto research as JSON. ONLY JSON, start with { no text outside. Include ALL 20+ tokens found.\n\nRESEARCH:\n' + research.slice(0,12000) + '\n\n{"tokens":[{"name":"Name","ticker":"TICK","chain":"Solana","age":"6h","score":7,"sources":["DexScreener"],"summary":"Description.","stats":{"MKT CAP":"$1M","VOL 24H":"$200K","PRIX":"$0.01","LIQUID.":"$150K"},"signals":[{"type":"pos","text":"positive"},{"type":"neg","text":"risk"},{"type":"neu","text":"neutral"}],"socials":{"twitter":"https://twitter.com/h","linkedin":"","youtube":"","website":"https://officialsite.com"},"creator":{"twitter":"@h","twitter_followers":"5000","twitter_age":"1yr","previous_tokens":["T(yr,result)"],"scam_history":"None","wallet_age":"1yr","doxxed":false,"team_size":"3","linkedin_verified":false,"red_flags":["r"],"green_flags":["g"]},"contract":{"address":"0x","verified":true,"renounced":false,"honeypot":false,"mint_disabled":true,"lp_locked":"6mo","top10_holders":"45%","dev_wallet":"3%","suspicious_txs":0,"linked_contracts":["CA"]},"market_context":"Context.","logo_url":"","price_curve":[0.01,0.012,0.015,0.018,0.016,0.021,0.025,0.023,0.028,0.032,0.036,0.04],"price_labels":["D","M1","M2","M3","M4","M5","M6","M7","M8","M9","M10","M12"]}]}\n\nRules: score:9-10=top|1-2=danger. price_curve=12 realistic values. For socials.website: ONLY use verified official domains (cross-referenced with Twitter/CMC/CoinGecko — no phishing clones). Include minimum 20 tokens. Start with {:';
-      return callAPI([{role:'user', content: fmtMsg}], false, 10000);
-    })
+  callAPI([{role:'user', content: searchMsg}], true, 8000)
     .then(function(jsonRaw) {
       var parsed = extractJSON(jsonRaw, 'tokens');
       if (!parsed) throw new Error('JSON introuvable');
@@ -1561,11 +1555,10 @@ function startXScan() {
   var btn = document.getElementById('xScanBtn');
   btn.disabled = true; btn.textContent = '⏳ SCAN...';
 
-  document.getElementById('xMain').innerHTML = buildProgLoadingHtml('𝕏 SCAN MULTI-SOURCES', ['Étape 1/2 — Recherche X, Google, YouTube, Reddit, Discord, crypto news...', 'Étape 2/2 — Synthèse & formatage JSON...'], 'var(--acc2)');
-  scanProgStart(200, 'var(--acc2)');
+  document.getElementById('xMain').innerHTML = buildProgLoadingHtml('𝕏 SCAN MULTI-SOURCES', ['Recherche X, Google, Discord, crypto news — JSON direct...'], 'var(--acc2)');
+  scanProgStart(120, 'var(--acc2)');
 
-  var searchMsg = 'TODAY IS ' + NOW_YEAR + '-03 (March ' + NOW_YEAR + '). Search across X/Twitter OFFICIAL accounts, official project websites, official blogs, Discord announcements, CoinDesk, The Block, Decrypt, DeFiLlama for crypto projects announcing token launches, TGE, or airdrops. Query: "' + query + '". CRITICAL: For EACH TGE date found, you MUST cross-verify by searching the project\'s OFFICIAL Twitter and website for their LATEST announcement — do NOT use old news. If official sources say March ' + NOW_YEAR + ' or Q1 ' + NOW_YEAR + ', report that, not older dates. Find 10+ projects:\n- Exact TGE/launch date (verified from official source, name that source)\n- Airdrop % of total supply allocated to community\n- FDV estimate vs competitors in same category\n- Account age, followers, funding, investors\nDistinguish CONFIRMED (official team announcement) vs RUMORED (community speculation). For each field rate credibility 1-5 where 5=official confirmed, 4=multiple reliable sources, 3=single source, 2=community rumor, 1=unverified. Rate overall_credibility 1-5. Write detailed multi-source report covering 10+ projects.';
-  var fmtMsg2 = function(r) { return 'Format as JSON. ONLY JSON start with {:\n\nRESEARCH:\n' + r.slice(0,9000) + '\n\n{"projects":[{"name":"Name","ticker":"TICK","handle":"@h","followers":"50000","account_age":"2yr","verified":false,"status":"tge","is_rumor":false,"credibility":null,"credibility_reason":"","overall_credibility":4,"launch_date":"March ' + NOW_YEAR + '","blockchain":"Ethereum","category":"DEX","description":"Desc.","recent_tweet":"Tweet.","score":8,"funding":"$50M","investors":"a16z","is_top_pick":false,"tge_date":"March ' + NOW_YEAR + '","tge_credibility":5,"tge_source":"Official tweet @project March ' + NOW_YEAR + '","airdrop_pct":15,"airdrop_credibility":3,"airdrop_source":"Community Discord","fdv_estimate":"$500M","fdv_credibility":3,"fdv_comparable":"Similar DEX: Uniswap $3B — estimate in range","socials":{"twitter":"https://twitter.com/h","website":"https://site.com"},"red_flags":["r"],"green_flags":["g"],"logo_url":""}]}\n\nRules:\n- TODAY IS MARCH ' + NOW_YEAR + ' — use accurate dates from research, do NOT invent future dates\n- tge_date must reflect the LATEST official announcement (if research says March ' + NOW_YEAR + ', use that)\n- status: launch/tge/soon/airdrop/' + NEXT_YEAR + '/rumor/presale\n- is_rumor:true for unconfirmed\n- overall_credibility 1-5 (5=official confirmed with source, 4=multiple reliable, 3=one source, 2=rumor, 1=unverified)\n- credibility 1-5 for rumors (null for confirmed)\n- is_top_pick:true for score>=8 AND tge_credibility>=4 AND airdrop_pct known\n- tge_credibility/airdrop_credibility/fdv_credibility each 1-5\n- Include 10+ projects minimum\nStart with {:'; };
+  var searchMsg = 'TODAY IS MARCH ' + NOW_YEAR + '. Search X/Twitter official accounts, official websites, Discord, CoinDesk, The Block, DeFiLlama for crypto projects with TGE/airdrop/launch. Query: "' + query + '". CRITICAL: verify each TGE date against the project\'s LATEST official tweet/blog — do NOT use outdated info. Return ONLY valid JSON starting with {:\n{"projects":[{"name":"Name","ticker":"TICK","handle":"@h","followers":"50000","account_age":"2yr","verified":false,"status":"tge","is_rumor":false,"credibility":null,"credibility_reason":"","overall_credibility":4,"launch_date":"March ' + NOW_YEAR + '","blockchain":"Ethereum","category":"DEX","description":"Desc.","recent_tweet":"Tweet.","score":8,"funding":"$50M","investors":"a16z","is_top_pick":false,"tge_date":"March ' + NOW_YEAR + '","tge_credibility":5,"tge_source":"Official tweet @project March ' + NOW_YEAR + '","airdrop_pct":15,"airdrop_credibility":3,"airdrop_source":"Community Discord","fdv_estimate":"$500M","fdv_credibility":3,"fdv_comparable":"Uniswap $3B — estimate in range","socials":{"twitter":"https://twitter.com/h","website":"https://site.com"},"red_flags":["r"],"green_flags":["g"],"logo_url":""}]}\nRules: status=launch/tge/soon/airdrop/' + NEXT_YEAR + '/rumor/presale. overall_credibility 1-5 (5=official confirmed). tge_date=LATEST official announcement. 10+ projects. Start with {:';
 
   var xDone = function() {
     xScanning = false;
@@ -1573,11 +1566,7 @@ function startXScan() {
     btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="margin-right:6px"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622z"/></svg>RELANCER';
   };
 
-  callAPI([{role:'user', content: searchMsg}], true, 5000)
-    .then(function(res) {
-      scanProgAdvance(62, 90);
-      return callAPI([{role:'user', content: fmtMsg2(res)}], false, 7000);
-    })
+  callAPI([{role:'user', content: searchMsg}], true, 6000)
     .then(function(jr) {
       var parsed = extractJSON(jr, 'projects');
       if (!parsed || !(parsed.projects||[]).length) throw new Error('JSON vide');
@@ -1713,11 +1702,10 @@ function startAirdropScan() {
   var btn = document.getElementById('adScanBtn');
   btn.disabled = true; btn.textContent = '⏳ SCAN…';
 
-  document.getElementById('adMain').innerHTML = buildProgLoadingHtml('◎ SCAN AIRDROPS', ['Étape 1/2 — Recherche airdrops ' + NOW_YEAR + '-' + NEXT_YEAR + '...', 'Étape 2/2 — Formatage JSON...'], 'var(--acc)');
-  scanProgStart(200, 'var(--acc)');
+  document.getElementById('adMain').innerHTML = buildProgLoadingHtml('◎ SCAN AIRDROPS', ['Recherche airdrops ' + NOW_YEAR + '-' + NEXT_YEAR + ' — JSON direct...'], 'var(--acc)');
+  scanProgStart(120, 'var(--acc)');
 
-  var searchMsg = 'Search for crypto airdrops for ' + NOW_YEAR + ' and ' + NEXT_YEAR + '. Find BOTH confirmed (officially announced) and rumored (community speculation). Key projects: ZKsync Season 2, Scroll, Linea, Movement Network, Monad, Babylon BABY, Taiko, Sophon, Nillion, Initia, MegaETH, any active points programs. For each: name, ticker, blockchain, status, eligibility criteria, token %, total supply, estimated price, snapshot date, funding, investors. For rumors rate credibility 1-5. Write detailed report covering 10+ projects.';
-  var fmtMsg3 = function(r) { return 'Format as JSON. ONLY JSON start with {:\n\nRESEARCH:\n' + r.slice(0,9000) + '\n\n{"airdrops":[{"name":"Project","ticker":"TOKEN","type":"confirmed","status":"active","blockchain":"Ethereum L2","date":"Q2 ' + NOW_YEAR + '","snapshot":"TBA","funding":"$50M","investors":"a16z","description":"Desc.","total_supply":1000000000,"total_supply_pct":10,"eligible_wallets":"500000","estimated_value":"100-5000","estimated_price":"$0.50","credibility":null,"credibility_reason":"","tasks":[{"type":"chain","label":"Task","points":30}],"red_flags":["r"],"green_flags":["g"],"socials":{"twitter":"","website":""},"logo_url":""}]}\n\ntype:confirmed or rumor. credibility null for confirmed, 1-5 for rumors. 10+ airdrops. Start with {:'; };
+  var searchMsg = 'TODAY IS MARCH ' + NOW_YEAR + '. Search for crypto airdrops ' + NOW_YEAR + '-' + NEXT_YEAR + '. Find confirmed AND rumored. Key projects: ZKsync S2, Scroll, Linea, Movement, Monad, Babylon BABY, Taiko, Sophon, Nillion, Initia, MegaETH, active points programs. Return ONLY valid JSON starting with {:\n{"airdrops":[{"name":"Project","ticker":"TOKEN","type":"confirmed","status":"active","blockchain":"Ethereum L2","date":"Q2 ' + NOW_YEAR + '","snapshot":"TBA","funding":"$50M","investors":"a16z","description":"Desc.","total_supply":1000000000,"total_supply_pct":10,"eligible_wallets":"500000","estimated_value":"100-5000","estimated_price":"$0.50","credibility":null,"credibility_reason":"","tasks":[{"type":"chain","label":"Task","points":30}],"red_flags":["r"],"green_flags":["g"],"socials":{"twitter":"","website":""},"logo_url":""}]}\ntype:confirmed/rumor. credibility null for confirmed, 1-5 for rumors. 10+ airdrops. Start with {:';
 
   var adDone = function() {
     adScanning = false;
@@ -1725,11 +1713,7 @@ function startAirdropScan() {
     btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>RELANCER';
   };
 
-  callAPI([{role:'user', content: searchMsg}], true, 4500)
-    .then(function(res) {
-      scanProgAdvance(62, 90);
-      return callAPI([{role:'user', content: fmtMsg3(res)}], false, 5500);
-    })
+  callAPI([{role:'user', content: searchMsg}], true, 5000)
     .then(function(jr) {
       var parsed = extractJSON(jr, 'airdrops');
       if (!parsed || !(parsed.airdrops||[]).length) throw new Error('JSON vide');
@@ -2574,9 +2558,9 @@ function startAddrScan() {
     + '10. RED FLAGS & GREEN FLAGS: comprehensive list of concerning behaviors (wash trading, interaction with phishing, rug pull investments, etc.) and positive signals (early investor in successful projects, consistent profits, blue chip holder, etc.)\n\n'
     + 'Write a very detailed factual report. If some data is not publicly available, note that.';
 
-  callAPI([{role:'user', content: researchPrompt}], true, 8000)
+  callAPI([{role:'user', content: researchPrompt}], true, 5000)
     .then(function(research) {
-      var fmtPrompt = 'Format this wallet analysis as JSON. ONLY JSON start with {:\n\nRESEARCH:\n' + research.slice(0,14000) + '\n\n'
+      var fmtPrompt = 'Format this wallet analysis as JSON. ONLY JSON start with {:\n\nRESEARCH:\n' + research.slice(0,8000) + '\n\n'
         + '{"wallet":{'
         + '"address":"0x...","detected_chains":["Ethereum","Solana"],"first_seen":"2021-05-10","age":"3 years",'
         + '"labels":["Whale","DeFi User"],"known_entity":null,'
@@ -2598,7 +2582,7 @@ function startAddrScan() {
         + '"verdict":"TRADER EXPÉRIMENTÉ",'
         + '"summary":"Wallet expérimenté actif depuis 2021..."'
         + '}}\n\nRules:\n- degen_level 1-10 (1=conservative, 10=pure degen)\n- score 1-10 overall wallet quality\n- verdict in French\n- Start with {:';
-      return callAPI([{role:'user', content: fmtPrompt}], false, 9000);
+      return callAPI([{role:'user', content: fmtPrompt}], false, 6000);
     })
     .then(function(jr) {
       clearInterval(stepInt);
@@ -2809,10 +2793,10 @@ function startProjectSearch() {
     + '11. SIMILAR PROJECTS: list 3-5 similar projects in same category if the searched name was unclear.\n\n'
     + 'Write a very detailed factual report covering ALL points above.';
 
-  callAPI([{role:'user', content: researchPrompt}], true, 8000)
+  callAPI([{role:'user', content: researchPrompt}], true, 5000)
     .then(function(research) {
-      var fmtPrompt = 'Format this comprehensive crypto project research as a single JSON object. ONLY JSON, start with {:\n\n'
-        + 'RESEARCH:\n' + research.slice(0, 14000) + '\n\n'
+      var fmtPrompt = 'Format this crypto project research as JSON. ONLY JSON, start with {:\n\n'
+        + 'RESEARCH:\n' + research.slice(0, 8000) + '\n\n'
         + 'Output JSON with this structure (fill ALL fields from research, use null if truly unknown):\n'
         + '{"project":{'
         + '"name":"","ticker":"","chain":"","category":"","website":"https://official.com","website_domain":"official.com","domain_age":"3 years","domain_created":"2021-03-15","domain_registrar":"Namecheap","domain_country":"US","ssl_verified":true,'
@@ -2848,7 +2832,7 @@ function startProjectSearch() {
         + '- ALL founder fields must be filled with actual research data\n'
         + '- news_timeline events: type = pos/neg/neu\n'
         + '- Start with {:';
-      return callAPI([{role:'user', content: fmtPrompt}], false, 9000);
+      return callAPI([{role:'user', content: fmtPrompt}], false, 6000);
     })
     .then(function(jr) {
       clearInterval(stepInt);
