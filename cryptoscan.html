@@ -1229,7 +1229,11 @@ function callAPI(messages, useWebSearch, maxTokens) {
   // 1) POST → reçoit un job_id immédiatement
   return fetch(API_BASE + '/api/anthropic', {method: 'POST', headers: headers, body: JSON.stringify(body)})
     .then(function(r) {
-      if (!r.ok) return r.json().then(function(e) { throw new Error('API ' + r.status + ' — ' + (e.error && e.error.message ? e.error.message : r.statusText)); });
+      if (!r.ok) {
+        var ct = r.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) throw new Error('Erreur serveur ' + r.status + ' — réessayez dans quelques secondes');
+        return r.json().then(function(e) { throw new Error('API ' + r.status + ' — ' + (e.error && e.error.message ? e.error.message : r.statusText)); });
+      }
       return r.json();
     })
     .then(function(resp) {

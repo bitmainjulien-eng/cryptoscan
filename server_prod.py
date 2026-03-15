@@ -9,7 +9,7 @@ import http.server
 import socketserver
 import urllib.request
 import urllib.error
-import json, os, sys, threading, socket, time, traceback, uuid
+import json, os, sys, threading, socket, time, traceback, uuid, hashlib
 
 # ── CONFIGURATION ─────────────────────────────────────────────────────────────
 PORT     = int(os.environ.get("PORT", 8080))
@@ -142,11 +142,11 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
     def _proxy(self):
         """
         Retourne immédiatement un job_id, puis traite la requête en arrière-plan.
-        Le client poll GET /api/job/{job_id} toutes les 2s pour récupérer le résultat.
+        Le job_id est un hash du payload → idempotent si le client re-poste.
         """
         try:
             length = int(self.headers.get("Content-Length", 0))
-            if length > 1024 * 1024:  # 1 MB max
+            if length > 1024 * 1024:
                 self._json_error(413, "Payload trop volumineux (max 1 MB)")
                 return
             payload = self.rfile.read(length)
@@ -159,31 +159,45 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
                 self._json_error(401, "Clé API manquante.")
                 return
 
-            # Créer le job
-            job_id = str(uuid.uuid4())
+            # Job_id déterministe = hash du payload (idempotent si retry)
+            job_id = hashlib.md5(payload).hexdigest()
+
             with _jobs_lock:
-                _jobs[job_id] = {
-                    "status":      "pending",
-                    "result":      None,
-                    "http_status": 200,
-                    "created":     time.time()
-                }
+                existing = _jobs.get(job_id)
 
-            # Lancer en arrière-plan
-            t = threading.Thread(
-                target=self._run_job,
-                args=(job_id, payload, api_key),
-                daemon=True
-            )
-            t.start()
+            if existing is None:
+                # Nouveau job
+                with _jobs_lock:
+                    _jobs[job_id] = {
+                        "status":      "pending",
+                        "result":      None,
+                        "http_status": 200,
+                        "created":     time.time()
+                    }
+                t = threading.Thread(
+                    target=self._run_job,
+                    args=(job_id, payload, api_key),
+                    daemon=True
+                )
+                t.start()
+            # else: job déjà en cours, on retourne le même job_id
 
-            # Répondre immédiatement avec le job_id
             resp = json.dumps({"job_id": job_id}).encode()
-            self._ok(resp, "application/json")
+            try:
+                self._ok(resp, "application/json")
+            except (BrokenPipeError, ConnectionResetError):
+                # Railway a coupé la connexion, le job tourne quand même
+                ts = time.strftime("%H:%M:%S")
+                print(f"  [{ts}] BrokenPipe sur job {job_id[:8]} — job continue en background", flush=True)
 
+        except (BrokenPipeError, ConnectionResetError):
+            pass
         except Exception as e:
             traceback.print_exc()
-            self._json_error(500, str(e))
+            try:
+                self._json_error(500, str(e))
+            except (BrokenPipeError, ConnectionResetError):
+                pass
 
     def _run_job(self, job_id, payload, api_key):
         """Exécute l'appel Anthropic dans un thread séparé."""
@@ -221,11 +235,14 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
             return
 
         # done ou error — retourner le résultat brut d'Anthropic
-        self._send_cors_headers(job["http_status"])
-        self.send_header("Content-Type",   "application/json")
-        self.send_header("Content-Length", str(len(job["result"])))
-        self.end_headers()
-        self.wfile.write(job["result"])
+        try:
+            self._send_cors_headers(job["http_status"])
+            self.send_header("Content-Type",   "application/json")
+            self.send_header("Content-Length", str(len(job["result"])))
+            self.end_headers()
+            self.wfile.write(job["result"])
+        except (BrokenPipeError, ConnectionResetError):
+            pass  # Client déconnecté, résultat perdu mais pas critique
 
         # Nettoyer le job immédiatement après livraison
         with _jobs_lock:
