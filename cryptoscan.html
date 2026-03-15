@@ -888,8 +888,15 @@ body.theme-wormhole .card,body.theme-wormhole .x-card,body.theme-wormhole .ad-ca
 
 <!-- PAGE TOP7 -->
 <div id="page-top7" style="display:none">
+  <div class="srcbar" style="background:var(--bg)">
+    <span class="src-lbl">★ TOP 7 SEMAINE</span>
+    <div class="scan-btn-group">
+      <span class="cost-pill" id="costPillTop7"><span class="cp-icon">◈</span><span id="costValTop7">~$0.0000</span></span>
+      <button class="btn-scan" id="top7ScanBtn" onclick="startTop7Scan()">▶ &nbsp;LANCER LE SCAN</button>
+    </div>
+  </div>
   <div class="main" id="top7Main">
-    <div class="empty"><span class="empty-hex">★</span><div class="empty-t">Top 7 de la semaine</div><div class="empty-s">Lancez un scan pour voir le classement.</div></div>
+    <div class="empty"><span class="empty-hex">★</span><div class="empty-t">Top 7 de la semaine</div><div class="empty-s">Lancez un scan pour voir le classement des 7 meilleurs tokens.</div></div>
   </div>
 </div>
 
@@ -1877,6 +1884,60 @@ function renderX() {
   });
 }
 
+// ═══ TOP 7 SCANNER ═══
+var top7Scanning = false;
+function startTop7Scan() {
+  if (top7Scanning || scanning) return;
+  top7Scanning = true;
+  var btn = document.getElementById('top7ScanBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ SCAN EN COURS…'; }
+  _resetCost('costPillTop7');
+
+  var steps = ['Étape 1/2 — Recherche web...','Analyse créateurs...','Traçage contrats...','Étape 2/2 — Formatage JSON...','Classement Top 7...'];
+  document.getElementById('top7Main').innerHTML = buildProgLoadingHtml('★ TOP 7 EN COURS', steps, '#f5c518');
+  scanProgStart(160, '#f5c518');
+  startFunnyMsgs();
+  var si = 0;
+  var st = setInterval(function() {
+    var e1 = document.getElementById('ss_'+si); if (e1) e1.classList.remove('active');
+    si = (si+1) % steps.length;
+    var e2 = document.getElementById('ss_'+si); if (e2) e2.classList.add('active');
+  }, 2000);
+
+  var srcs = ['DexScreener','CoinGecko','CoinMarketCap'];
+  var step1Msg = 'Search ' + srcs.join(', ') + ' for 25+ real crypto tokens newly listed in the last 48-72h. For EACH token give: name, ticker, chain, listing age, price, market cap, volume 24h, liquidity, contract address, creator Twitter handle + followers + account age + previous tokens + scam history, LP lock status, top10 holders %, dev wallet %, honeypot status, audit status, official website, score 1-10. Write a numbered list covering at least 25 distinct tokens.';
+  callAPI([{role:'user',content:step1Msg}], true, 4000)
+    .then(function(research) {
+      scanProgAdvance(55, 88);
+      var fmtMsg = 'Format ALL tokens from this research as JSON. Include EVERY token found — minimum 20. ONLY JSON start with {:\n\nRESEARCH:\n' + research.slice(0,11000) + '\n\n'
+        + '{"tokens":[{"name":"Name","ticker":"TICK","chain":"Solana","age":"6h","score":7,"sources":["DexScreener"],'
+        + '"summary":"One sentence.","stats":{"MKT CAP":"$1M","VOL 24H":"$200K","PRIX":"$0.01","LIQUID.":"$150K"},'
+        + '"signals":[["pos","good"],["neg","risk"],["neu","neutral"]],'
+        + '"socials":{"twitter":"","linkedin":"","youtube":"","website":""},'
+        + '"creator":{"twitter":"@h","twitter_followers":"5000","twitter_age":"1yr","previous_tokens":[],"scam_history":"None","wallet_age":"1yr","doxxed":false,"team_size":"3","linkedin_verified":false,"red_flags":[],"green_flags":[]},'
+        + '"contract":{"address":"0x","verified":true,"renounced":false,"honeypot":false,"mint_disabled":true,"lp_locked":"6mo","top10_holders":"45%","dev_wallet":"3%","suspicious_txs":0,"linked_contracts":[]},'
+        + '"price_curve":[1,1.2,1.5,1.3,1.8,2.1],"tge_credibility":4,"airdrop_credibility":4,"fdv_credibility":4,"overall_credibility":4}]}';
+      return callAPI([{role:'user',content:fmtMsg}], false, 8000);
+    })
+    .then(function(jr) {
+      clearInterval(st);
+      var parsed = extractJSON(jr, 'tokens');
+      if (!parsed || !parsed.tokens || !parsed.tokens.length) throw new Error('JSON vide — réessayez');
+      allTokens = parsed.tokens;
+      renderTop7();
+    })
+    .catch(function(e) {
+      clearInterval(st);
+      document.getElementById('top7Main').innerHTML = '<div style="padding:28px;text-align:center"><div style="color:var(--dng);font-size:10px;margin-bottom:12px">✗ Erreur : '+esc(e&&e.message?e.message:'Erreur API')+'</div></div>';
+    })
+    .finally(function() {
+      top7Scanning = false;
+      scanProgFinish();
+      stopFunnyMsgs();
+      if (btn) { btn.disabled = false; btn.textContent = '▶ RELANCER'; }
+    });
+}
+
 // ═══ AIRDROP SCANNER ═══
 function startAirdropScan() {
   if (adScanning) return;
@@ -1893,6 +1954,8 @@ function startAirdropScan() {
 
   var adDone = function() {
     adScanning = false;
+    scanProgFinish();
+    stopFunnyMsgs();
     btn.disabled = false;
     btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>RELANCER';
   };
@@ -2761,21 +2824,16 @@ function startAddrScan() {
     '📝 Consolidation et scoring final...'
   ];
 
-  var loadHtml = '<div class="wa-loading"><span class="wa-loading-hex">⬡</span>'
-    + '<div style="font-family:Syne,sans-serif;font-size:18px;font-weight:700;margin-bottom:8px">ANALYSE EN COURS</div>'
-    + '<div style="font-size:9px;color:var(--mut);margin-bottom:16px;word-break:break-all">' + esc(addr) + '</div>'
-    + '<div style="font-size:9px;color:var(--mut);line-height:2.2">'
-    + steps.map(function(s,i){ return '<div id="was_'+i+'">'+esc(s)+'</div>'; }).join('')
-    + '</div></div>';
-  document.getElementById('waMain').innerHTML = loadHtml;
+  document.getElementById('waMain').innerHTML = buildProgLoadingHtml('⬡ ANALYSE ADRESSE', steps, 'var(--acc3)');
+  scanProgStart(80, 'var(--acc3)');
+  startFunnyMsgs();
 
   var si = 0;
   var stepInt = setInterval(function() {
-    var prev = document.getElementById('was_'+si); if (prev) prev.style.color='var(--mut)';
+    var prev = document.getElementById('ss_'+si); if (prev) prev.classList.remove('active');
     si = (si+1) % steps.length;
-    var cur = document.getElementById('was_'+si); if (cur) cur.style.color='var(--acc3)';
+    var cur = document.getElementById('ss_'+si); if (cur) cur.classList.add('active');
   }, 3500);
-  if (document.getElementById('was_0')) document.getElementById('was_0').style.color='var(--acc3)';
 
   var researchPrompt = 'ULTRA-DEEP analysis of crypto wallet address: ' + addr + '\n\n'
     + 'Search across ALL these sources for this address:\n'
@@ -2838,6 +2896,7 @@ function startAddrScan() {
     })
     .finally(function() {
       waScanning = false;
+      scanProgFinish();
       stopFunnyMsgs();
       btn.disabled = false;
       btn.textContent = '⬡  ANALYSER';
@@ -2982,19 +3041,16 @@ function startProjectSearch() {
     '✨ Génération de la fiche complète...'
   ];
 
-  var loadHtml = '<div class="rp-loading"><span class="rp-loading-hex">⬡</span>'
-    + '<div class="rp-loading-title">ANALYSE EN COURS</div>'
-    + '<div class="rp-loading-steps">'
-    + steps.map(function(s, i) { return '<div class="rp-loading-step" id="rps_' + i + '">' + esc(s) + '</div>'; }).join('')
-    + '</div></div>';
-  document.getElementById('rpMain').innerHTML = loadHtml;
+  document.getElementById('rpMain').innerHTML = buildProgLoadingHtml('⬡ RECHERCHE PROJET', steps, 'var(--acc)');
+  scanProgStart(90, 'var(--acc)');
+  startFunnyMsgs();
 
   var si = 0;
   var stepInt = setInterval(function() {
-    var prev = document.getElementById('rps_' + si);
+    var prev = document.getElementById('ss_' + si);
     if (prev) prev.classList.remove('active');
     si = (si + 1) % steps.length;
-    var cur = document.getElementById('rps_' + si);
+    var cur = document.getElementById('ss_' + si);
     if (cur) cur.classList.add('active');
   }, 3500);
   if (document.getElementById('rps_0')) document.getElementById('rps_0').classList.add('active');
@@ -3090,6 +3146,8 @@ function startProjectSearch() {
     })
     .finally(function() {
       rpScanning = false;
+      scanProgFinish();
+      stopFunnyMsgs();
       btn.disabled = false;
       btn.textContent = '⬡  ANALYSER';
     });

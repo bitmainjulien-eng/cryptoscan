@@ -275,15 +275,16 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(job["result"])))
             self.end_headers()
             self.wfile.write(job["result"])
+            # Nettoyer UNIQUEMENT après livraison réussie
+            with _jobs_lock:
+                _jobs.pop(job_id, None)
         except (BrokenPipeError, ConnectionResetError):
-            pass  # Client déconnecté, résultat perdu mais pas critique
+            # Ne pas supprimer : le client peut re-poller et récupérer le résultat
+            pass
 
-        # Nettoyer le job immédiatement après livraison
-        with _jobs_lock:
-            _jobs.pop(job_id, None)
-
-    def _call_anthropic_with_retry(self, payload, api_key, max_retries=3):
-        wait = 3
+    def _call_anthropic_with_retry(self, payload, api_key, max_retries=4):
+        wait_429 = 12   # délai initial rate-limit (plus long car quota réel)
+        wait_net = 2    # délai initial erreur réseau
         for attempt in range(max_retries):
             req = urllib.request.Request(
                 "https://api.anthropic.com/v1/messages",
@@ -305,13 +306,13 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
                                    e.headers.get("x-ratelimit-reset-requests"))
                     if retry_after:
                         try:
-                            wait = min(int(retry_after) + 1, 20)
+                            wait_429 = min(int(retry_after) + 1, 25)
                         except ValueError:
                             pass
                     ts = time.strftime("%H:%M:%S")
-                    print(f"  [{ts}] Rate limit 429 — attente {wait}s ({attempt+1}/{max_retries})...", flush=True)
-                    time.sleep(wait)
-                    wait = min(wait * 2, 20)
+                    print(f"  [{ts}] Rate limit 429 — attente {wait_429}s ({attempt+1}/{max_retries})...", flush=True)
+                    time.sleep(wait_429)
+                    wait_429 = min(wait_429 * 1.5, 25)
                     continue
                 else:
                     return e.code, e.read()
@@ -319,8 +320,8 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
                 ts = time.strftime("%H:%M:%S")
                 print(f"  [{ts}] Erreur réseau : {e}", flush=True)
                 if attempt < max_retries - 1:
-                    time.sleep(wait)
-                    wait = min(wait * 2, 10)
+                    time.sleep(wait_net)
+                    wait_net = min(wait_net * 2, 10)
                     continue
                 raise
 
