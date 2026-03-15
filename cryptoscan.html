@@ -2036,21 +2036,28 @@ var _modalProgTimer = null;
 function scanProgStart(estimatedSec, color) {
   if (_scanProg.timer) clearInterval(_scanProg.timer);
   _scanProg.start = Date.now();
-  _scanProg.totalSec = estimatedSec || 180;
+  _scanProg.totalSec = estimatedSec || 90;
   _scanProg.phasePct = 0;
   _scanProg.color = color || 'var(--acc)';
+  var _dots = 0;
   _scanProg.timer = setInterval(function() {
     var bar = document.getElementById('pb-bar');
     var lbl = document.getElementById('pb-label');
     if (!bar || !lbl) { clearInterval(_scanProg.timer); return; }
     var elapsed = (Date.now() - _scanProg.start) / 1000;
-    var pct = _scanProg.phasePct + Math.min(95 - _scanProg.phasePct, ((elapsed / _scanProg.totalSec) * (95 - _scanProg.phasePct)));
-    var remaining = Math.max(0, _scanProg.totalSec - elapsed);
+    var remaining = _scanProg.totalSec - elapsed;
     bar.style.background = _scanProg.color;
-    bar.style.width = pct.toFixed(0) + '%';
-    var t = remaining > 60 ? Math.ceil(remaining/60) + 'min' : Math.ceil(remaining) + 's';
     lbl.style.color = _scanProg.color;
-    lbl.textContent = Math.round(pct) + '% · ~' + t + ' restantes';
+    if (remaining > 0) {
+      var pct = _scanProg.phasePct + Math.min(93 - _scanProg.phasePct, (elapsed / _scanProg.totalSec) * (93 - _scanProg.phasePct));
+      bar.style.width = pct.toFixed(0) + '%';
+      var t = remaining > 60 ? Math.ceil(remaining/60) + 'min' : Math.ceil(remaining) + 's';
+      lbl.textContent = Math.round(pct) + '% · ~' + t + ' restantes';
+    } else {
+      _dots = (_dots + 1) % 4;
+      bar.style.width = '97%';
+      lbl.textContent = 'FINALISATION' + '.'.repeat(_dots + 1);
+    }
   }, 500);
 }
 

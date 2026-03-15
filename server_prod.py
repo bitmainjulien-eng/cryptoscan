@@ -210,24 +210,49 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
 
     def _run_job(self, job_id, payload, api_key):
         """Exécute l'appel Anthropic dans un thread séparé."""
+        TOTAL_TIMEOUT = 95  # secondes — hard cap indépendant des retries urllib
+
         with _jobs_lock:
             _jobs[job_id]["status"] = "running"
 
         _api_lock.acquire()
-        try:
-            status, data = self._call_anthropic_with_retry(payload, api_key)
+
+        result = [None]
+        exc    = [None]
+
+        def do_call():
+            try:
+                result[0] = self._call_anthropic_with_retry(payload, api_key)
+            except Exception as e:
+                exc[0] = e
+
+        worker = threading.Thread(target=do_call, daemon=True)
+        worker.start()
+        worker.join(timeout=TOTAL_TIMEOUT)
+        _api_lock.release()
+
+        if worker.is_alive():
+            # Le thread tourne toujours → timeout total dépassé
+            err = json.dumps({"error": {"message":
+                f"Timeout API ({TOTAL_TIMEOUT}s) — réessayez dans quelques secondes"}}).encode()
             with _jobs_lock:
-                _jobs[job_id]["status"]      = "done"
-                _jobs[job_id]["result"]      = data
-                _jobs[job_id]["http_status"] = status
-        except Exception as e:
-            err = json.dumps({"error": {"message": str(e)}}).encode()
+                _jobs[job_id]["status"]      = "error"
+                _jobs[job_id]["result"]      = err
+                _jobs[job_id]["http_status"] = 504
+            return
+
+        if exc[0]:
+            err = json.dumps({"error": {"message": str(exc[0])}}).encode()
             with _jobs_lock:
                 _jobs[job_id]["status"]      = "error"
                 _jobs[job_id]["result"]      = err
                 _jobs[job_id]["http_status"] = 500
-        finally:
-            _api_lock.release()
+        else:
+            status, data = result[0]
+            with _jobs_lock:
+                _jobs[job_id]["status"]      = "done"
+                _jobs[job_id]["result"]      = data
+                _jobs[job_id]["http_status"] = status
 
     def _get_job(self, job_id):
         """Retourne l'état du job."""
@@ -257,8 +282,8 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
         with _jobs_lock:
             _jobs.pop(job_id, None)
 
-    def _call_anthropic_with_retry(self, payload, api_key, max_retries=8):
-        wait = 5
+    def _call_anthropic_with_retry(self, payload, api_key, max_retries=3):
+        wait = 3
         for attempt in range(max_retries):
             req = urllib.request.Request(
                 "https://api.anthropic.com/v1/messages",
@@ -270,7 +295,9 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
             req.add_header("anthropic-beta",    "web-search-2025-03-05")
 
             try:
-                with urllib.request.urlopen(req, timeout=120) as r:
+                # timeout=70 : socket inactivity timeout (par opération)
+                # Le hard cap total est géré par _run_job (95s)
+                with urllib.request.urlopen(req, timeout=70) as r:
                     return r.status, r.read()
             except urllib.error.HTTPError as e:
                 if e.code == 429:
@@ -278,13 +305,13 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
                                    e.headers.get("x-ratelimit-reset-requests"))
                     if retry_after:
                         try:
-                            wait = int(retry_after) + 1
+                            wait = min(int(retry_after) + 1, 20)
                         except ValueError:
                             pass
                     ts = time.strftime("%H:%M:%S")
                     print(f"  [{ts}] Rate limit 429 — attente {wait}s ({attempt+1}/{max_retries})...", flush=True)
                     time.sleep(wait)
-                    wait = min(wait * 2, 120)
+                    wait = min(wait * 2, 20)
                     continue
                 else:
                     return e.code, e.read()
@@ -293,7 +320,7 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
                 print(f"  [{ts}] Erreur réseau : {e}", flush=True)
                 if attempt < max_retries - 1:
                     time.sleep(wait)
-                    wait = min(wait * 2, 60)
+                    wait = min(wait * 2, 10)
                     continue
                 raise
 
