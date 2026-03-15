@@ -61,7 +61,8 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Space Mono',monospa
 .src-btn{display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:9px;color:var(--mut);background:var(--bg3);border:1px solid var(--bdr);padding:5px 10px;cursor:pointer;transition:all .15s;user-select:none}
 .src-btn img{width:13px;height:13px;object-fit:contain;border-radius:2px;flex-shrink:0}
 .src-btn.active{color:var(--acc2);background:var(--acc2d);border-color:var(--acc2)}
-.btn-scan{background:var(--acc);color:#000;padding:10px 22px;font-size:11px;font-family:'Space Mono',monospace;font-weight:700;border:none;cursor:pointer;letter-spacing:1px;transition:all .15s;white-space:nowrap;margin-left:auto;display:flex;align-items:center;gap:7px}
+.btn-scan{background:var(--acc);color:#000;padding:10px 22px;font-size:11px;font-family:'Space Mono',monospace;font-weight:700;border:none;cursor:pointer;letter-spacing:1px;transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:7px}
+.scan-btn-group{margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0}
 .btn-scan:hover:not(:disabled){background:#55ffaa;transform:translateY(-1px)}
 .btn-scan:disabled{background:var(--mut);cursor:not-allowed;opacity:.7}
 .cost-pill{display:none;align-items:center;gap:4px;font-family:'Space Mono',monospace;font-size:9px;color:var(--acc2);background:rgba(0,255,136,.07);border:1px solid rgba(0,255,136,.25);padding:4px 9px;white-space:nowrap;margin-left:6px}
@@ -818,8 +819,10 @@ body.theme-spaceship .fm-overlay,body.theme-spaceship .modal-overlay{backdrop-fi
   <div class="srcbar">
     <span class="src-lbl">SOURCES</span>
     <div id="srcBtns" style="display:flex;gap:7px;flex-wrap:wrap"></div>
-    <button class="btn-scan" id="scanBtn">▶ &nbsp; LANCER LE SCAN</button>
-    <span class="cost-pill" id="costPill0"><span class="cp-icon">◈</span><span id="costVal0">~$0.0000</span></span>
+    <div class="scan-btn-group">
+      <span class="cost-pill" id="costPill0"><span class="cp-icon">◈</span><span id="costVal0">~$0.0000</span></span>
+      <button class="btn-scan" id="scanBtn">▶ &nbsp; LANCER LE SCAN</button>
+    </div>
   </div>
   <div class="fbar">
     <span class="fbar-lbl">FILTRER</span>
@@ -847,11 +850,13 @@ body.theme-spaceship .fm-overlay,body.theme-spaceship .modal-overlay{backdrop-fi
     <div class="x-topbar">
       <div class="x-search-wrap">
         <input type="text" id="xQuery" value="upcoming TGE airdrop token launch 2026 2027" placeholder="TGE 2026, airdrop, token launch...">
-        <button class="btn-x-scan" id="xScanBtn">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622z"/></svg>
-          SCANNER X
-        </button>
-        <span class="cost-pill" id="costPill1"><span class="cp-icon">◈</span><span id="costVal1">~$0.0000</span></span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="cost-pill" id="costPill1"><span class="cp-icon">◈</span><span id="costVal1">~$0.0000</span></span>
+          <button class="btn-x-scan" id="xScanBtn">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622z"/></svg>
+            SCANNER X
+          </button>
+        </div>
       </div>
       <div class="filter-chips" id="xChips">
         <div class="chip active" data-xf="all">TOUS</div>
@@ -886,11 +891,13 @@ body.theme-spaceship .fm-overlay,body.theme-spaceship .modal-overlay{backdrop-fi
       <div class="chip" data-af="active">⚡ ACTIFS</div>
       <div class="chip" data-af="upcoming">⏱ À VENIR</div>
     </div>
-    <button class="btn-x-scan" id="adScanBtn" style="margin-left:auto">
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-      SCANNER AIRDROPS
-    </button>
-    <span class="cost-pill" id="costPill2"><span class="cp-icon">◈</span><span id="costVal2">~$0.0000</span></span>
+    <div class="scan-btn-group">
+      <span class="cost-pill" id="costPill2"><span class="cp-icon">◈</span><span id="costVal2">~$0.0000</span></span>
+      <button class="btn-x-scan" id="adScanBtn">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        SCANNER AIRDROPS
+      </button>
+    </div>
   </div>
   <div class="main" id="adMain">
     <div class="empty"><span class="empty-hex">◎</span><div class="empty-t">Scanner d'Airdrops</div><div class="empty-s">Airdrops confirmés &amp; rumeurs avec score de crédibilité 1-5<br>Simulateur intégré pour estimer vos gains<br><br><strong style="color:var(--acc)">Cliquez SCANNER AIRDROPS</strong></div></div>
@@ -976,8 +983,10 @@ body.theme-spaceship .fm-overlay,body.theme-spaceship .modal-overlay{backdrop-fi
       <div class="wa-hero-sub">INTELLIGENCE ON-CHAIN · DEGEN SCORE · P&amp;L · ADRESSES LIÉES · NOTE /10</div>
       <div class="wa-search-row">
         <input type="text" id="waAddr" placeholder="0x... ou adresse Solana, BTC, ou tout réseau — coller ici" autocomplete="off" spellcheck="false" maxlength="90">
-        <button class="btn-wa-scan" id="waScanBtn">⬡ &nbsp;ANALYSER</button>
-        <span class="cost-pill" id="costPill3"><span class="cp-icon">◈</span><span id="costVal3">~$0.0000</span></span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="cost-pill" id="costPill3"><span class="cp-icon">◈</span><span id="costVal3">~$0.0000</span></span>
+          <button class="btn-wa-scan" id="waScanBtn">⬡ &nbsp;ANALYSER</button>
+        </div>
       </div>
     </div>
     <div id="waMain">
@@ -1007,8 +1016,10 @@ body.theme-spaceship .fm-overlay,body.theme-spaceship .modal-overlay{backdrop-fi
       <div class="rp-hero-sub">ANALYSE ULTRA-PROFONDE · TOUTES SOURCES · FONDATEURS · ON-CHAIN · DOMAIN</div>
       <div class="rp-search-row">
         <input type="text" id="rpQuery" placeholder="Nom du projet, ticker ou description... (ex: Kaito, KINTO, zkSync)">
-        <button class="btn-rp-scan" id="rpScanBtn">⬡ &nbsp;ANALYSER</button>
-        <span class="cost-pill" id="costPill4"><span class="cp-icon">◈</span><span id="costVal4">~$0.0000</span></span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="cost-pill" id="costPill4"><span class="cp-icon">◈</span><span id="costVal4">~$0.0000</span></span>
+          <button class="btn-rp-scan" id="rpScanBtn">⬡ &nbsp;ANALYSER</button>
+        </div>
       </div>
       <div class="rp-hint">✦ TYPOS TOLÉRÉS — L'IA trouvera les projets similaires si le nom n'est pas exact ✦ CHAQUE REQUÊTE PEUT DURER 5-10 MINUTES ✦</div>
     </div>
