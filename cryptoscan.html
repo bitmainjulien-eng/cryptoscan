@@ -1238,12 +1238,18 @@ function callAPI(messages, useWebSearch, maxTokens) {
   // 1) POST → reçoit un job_id immédiatement
   return fetch(API_BASE + '/api/anthropic', {method: 'POST', headers: headers, body: JSON.stringify(body)})
     .then(function(r) {
-      if (!r.ok) {
-        var ct = r.headers.get('content-type') || '';
-        if (!ct.includes('application/json')) throw new Error('Erreur serveur ' + r.status + ' — réessayez dans quelques secondes');
-        return r.json().then(function(e) { throw new Error('API ' + r.status + ' — ' + (e.error && e.error.message ? e.error.message : r.statusText)); });
-      }
-      return r.json();
+      var status = r.status;
+      return r.text().then(function(txt) {
+        var resp;
+        try { resp = JSON.parse(txt); } catch(e) {
+          // Réponse non-JSON (page XML/HTML de Railway) → erreur claire
+          throw new Error('Erreur serveur ' + status + ' — réessayez dans quelques secondes');
+        }
+        if (!r.ok) {
+          throw new Error('API ' + status + ' — ' + (resp.error && resp.error.message ? resp.error.message : 'Erreur serveur'));
+        }
+        return resp;
+      });
     })
     .then(function(resp) {
       // Ancien serveur local : réponse directe Anthropic (contient "content")
@@ -1251,7 +1257,7 @@ function callAPI(messages, useWebSearch, maxTokens) {
         return (resp.content || []).filter(function(b) { return b.type === 'text'; }).map(function(b) { return b.text; }).join('');
       }
       // Nouveau serveur prod : réponse avec job_id → polling
-      if (!resp.job_id) throw new Error('Réponse serveur invalide');
+      if (!resp.job_id) throw new Error('Réponse serveur invalide — réessayez');
       return _pollJob(resp.job_id, headers);
     });
 }
@@ -1268,14 +1274,15 @@ function _pollJob(jobId, headers) {
       if (apiKey) fetchHeaders['x-api-key'] = apiKey;
       fetch(API_BASE + '/api/job/' + jobId, {headers: fetchHeaders})
         .then(function(r) {
-          var ct = r.headers.get('content-type') || '';
-          if (!ct.includes('application/json')) {
-            // Railway/proxy a renvoyé une page d'erreur non-JSON → retry
-            console.warn('Poll non-JSON response (status=' + r.status + '), retry in 3s...');
-            setTimeout(poll, 3000);
-            return;
-          }
-          return r.json().then(function(d) {
+          var status = r.status;
+          return r.text().then(function(txt) {
+            var d;
+            try { d = JSON.parse(txt); } catch(e) {
+              // Réponse non-JSON (Railway proxy) → retry silencieux
+              console.warn('Poll non-JSON (status=' + status + '), retry 3s...');
+              setTimeout(poll, 3000);
+              return;
+            }
             if (d.status === 'pending' || d.status === 'running') {
               setTimeout(poll, 2000);
             } else if (d.error) {
