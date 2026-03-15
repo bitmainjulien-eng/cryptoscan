@@ -245,15 +245,17 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Space Mono',monospa
 .lang-opt{padding:8px 12px;cursor:pointer;font-size:10px;font-family:'Space Mono',monospace;display:flex;align-items:center;gap:8px;color:var(--txt2);transition:background .15s}
 .lang-opt:hover,.lang-opt.active{background:var(--bg3);color:var(--acc)}
 /* ── THEME TOGGLE ── */
-.theme-btn{background:var(--bg3);border:1px solid var(--bdr2);color:var(--txt);font-size:13px;padding:5px 10px;cursor:pointer;min-height:32px;transition:border-color .2s,background .2s}
+.theme-btn{background:var(--bg3);border:1px solid var(--bdr2);color:var(--txt);font-size:12px;padding:4px 9px;cursor:pointer;min-height:30px;transition:border-color .2s,background .2s;font-family:'Space Mono',monospace;letter-spacing:.5px}
 .theme-btn:hover{border-color:var(--acc2);background:var(--bg3)}
+.theme-btn.t-active-space{border-color:#60c8ff;color:#60c8ff;background:rgba(96,200,255,.1)}
+.theme-btn.t-active-worm{border-color:#c084fc;color:#c084fc;background:rgba(192,132,252,.1)}
 /* ── SPACESHIP THEME ── */
 body.theme-spaceship{--bg:#00000a;--bg2:#050510;--bg3:#080818;--bdr:rgba(100,160,255,.12);--bdr2:rgba(100,160,255,.2);--acc:#60c8ff;--acc-d:rgba(96,200,255,.12);--acc2:#a78bfa;--acc2d:rgba(167,139,250,.12);--acc3:#f472b6;--txt:#d0e8ff;--txt2:#8ba8cc;--mut:#4a6a8a}
 body.theme-spaceship #spaceCanvas{display:block!important}
 body.theme-spaceship .topbar,body.theme-spaceship .apibar,body.theme-spaceship .nav-tabs,body.theme-spaceship .fbar,body.theme-spaceship .srcbar{background:rgba(5,5,20,.85)!important;backdrop-filter:blur(8px)}
 body.theme-spaceship .card,body.theme-spaceship .x-card,body.theme-spaceship .ad-card,body.theme-spaceship .rp-card{background:rgba(5,5,20,.7)!important;backdrop-filter:blur(6px)}
 body.theme-spaceship .fm-overlay,body.theme-spaceship .modal-overlay{backdrop-filter:blur(10px)}
-#spaceCanvas{display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+#spaceCanvas,#wormCanvas{display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
 .app{position:relative;z-index:1}
 /* ── GAME PAGE ── */
 .game-wrap{display:flex;flex-direction:column;align-items:center;padding:20px 10px;min-height:100vh;background:transparent}
@@ -270,9 +272,17 @@ body.theme-spaceship .fm-overlay,body.theme-spaceship .modal-overlay{backdrop-fi
 .sing-msg{font-size:clamp(14px,2.5vw,22px);letter-spacing:3px;color:#e066ff;text-shadow:0 0 20px #e066ff,0 0 40px #a020f0;margin-bottom:16px;min-height:1.6em}
 .sing-sub{font-size:11px;color:rgba(200,150,255,.6);letter-spacing:2px}
 #singularityCounter{display:none;position:fixed;bottom:14px;left:50%;transform:translateX(-50%);font-family:'Space Mono',monospace;font-size:10px;color:rgba(180,100,255,.6);letter-spacing:2px;z-index:9999;border:1px solid rgba(180,100,255,.2);padding:5px 16px;background:rgba(0,0,0,.6);pointer-events:none}
-/* ── WORMHOLE ── */
+/* ── WORMHOLE THEME ── */
+body.theme-wormhole{--bg:#03000a;--bg2:#060012;--bg3:#0a0018;--bdr:rgba(180,100,255,.12);--bdr2:rgba(180,100,255,.2);--acc:#c084fc;--acc-d:rgba(192,132,252,.12);--acc2:#f472b6;--acc2d:rgba(244,114,182,.12);--acc3:#60a5fa;--txt:#e8d0ff;--txt2:#a07ab8;--mut:#5a3a7a}
+body.theme-wormhole #wormCanvas{display:block!important}
+body.theme-wormhole .topbar,body.theme-wormhole .apibar,body.theme-wormhole .nav-tabs,body.theme-wormhole .fbar,body.theme-wormhole .srcbar{background:rgba(10,0,24,.88)!important;backdrop-filter:blur(8px)}
+body.theme-wormhole .card,body.theme-wormhole .x-card,body.theme-wormhole .ad-card,body.theme-wormhole .rp-card{background:rgba(10,0,24,.75)!important;backdrop-filter:blur(6px)}
+#wormCanvas{display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+/* ── SINGULARITY (one-shot) ── */
 .app-wormhole-exit{transition:transform .8s cubic-bezier(.55,.05,.67,.19),opacity .8s;transform:scale(0) rotate(720deg)!important;opacity:0!important;transform-origin:center center}
 .app-wormhole-enter{transition:transform .6s cubic-bezier(.17,.67,.39,1.21),opacity .6s;transform:scale(1) rotate(0deg)!important;opacity:1!important}
+/* ── FUNNY SCAN MSG ── */
+.funny-msg{font-family:'Space Mono',monospace;font-size:9px;color:var(--mut);letter-spacing:.5px;margin-top:10px;text-align:center;opacity:1;transition:opacity .35s;min-height:14px;font-style:italic}
 .game-ctrl-hint{font-size:8px;color:var(--mut);margin-top:8px;text-align:center;font-family:'Space Mono',monospace}
 .game-menu{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;z-index:10}
 .game-title{font-family:'Syne',sans-serif;font-size:28px;font-weight:900;background:linear-gradient(135deg,#ffd700,#ff6b00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
@@ -740,6 +750,7 @@ body.theme-spaceship .fm-overlay,body.theme-spaceship .modal-overlay{backdrop-fi
 
 <!-- TOPBAR -->
 <canvas id="spaceCanvas"></canvas>
+<canvas id="wormCanvas"></canvas>
 <!-- SINGULARITY OVERLAY -->
 <div id="singularityOv">
   <canvas id="singularityCanvas"></canvas>
@@ -757,7 +768,8 @@ body.theme-spaceship .fm-overlay,body.theme-spaceship .modal-overlay{backdrop-fi
   </div>
   <div style="display:flex;align-items:center;gap:8px">
     <div class="status-pill"><div class="dot" id="sDot"></div><span id="sTxt" data-i18n="STATUS_WAIT">EN ATTENTE</span></div>
-    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Changer de thème">🚀</button>
+    <button class="theme-btn" id="spaceBtn" onclick="toggleSpaceTheme()" title="Voyage Spatial">🚀 SPACE</button>
+    <button class="theme-btn" id="wormBtn" onclick="toggleWormTheme()" title="Trou Noir">🌑 WORM</button>
     <div class="lang-wrap">
       <button class="lang-btn" id="langBtn" onclick="toggleLangDrop()"><span id="langFlag">🇫🇷</span> <span id="langCode">FR</span> ▾</button>
       <div class="lang-drop" id="langDrop"></div>
@@ -1654,6 +1666,7 @@ function startScan() {
   var si = 0;
   document.getElementById('scanMain').innerHTML = buildProgLoadingHtml('⬡ DEEP SCAN EN COURS', steps, 'var(--acc)');
   scanProgStart(160, 'var(--acc)');
+  startFunnyMsgs();
   var st = setInterval(function() {
     var el = document.getElementById('ss_' + si);
     if (el) el.classList.remove('active');
@@ -1725,6 +1738,7 @@ function startXScan() {
 
   document.getElementById('xMain').innerHTML = buildProgLoadingHtml('𝕏 SCAN MULTI-SOURCES', ['Recherche X, Google, Discord, crypto news — JSON direct...'], 'var(--acc2)');
   scanProgStart(120, 'var(--acc2)');
+  startFunnyMsgs();
 
   var searchMsg = 'TODAY IS MARCH ' + NOW_YEAR + '. Search X/Twitter official accounts, official websites, Discord, CoinDesk, The Block, DeFiLlama for crypto projects with TGE/airdrop/launch. Query: "' + query + '". CRITICAL: verify each TGE date against the project\'s LATEST official tweet/blog — do NOT use outdated info. Return ONLY valid JSON starting with {:\n{"projects":[{"name":"Name","ticker":"TICK","handle":"@h","followers":"50000","account_age":"2yr","verified":false,"status":"tge","is_rumor":false,"credibility":null,"credibility_reason":"","overall_credibility":4,"launch_date":"March ' + NOW_YEAR + '","blockchain":"Ethereum","category":"DEX","description":"Desc.","recent_tweet":"Tweet.","score":8,"funding":"$50M","investors":"a16z","is_top_pick":false,"tge_date":"March ' + NOW_YEAR + '","tge_credibility":5,"tge_source":"Official tweet @project March ' + NOW_YEAR + '","airdrop_pct":15,"airdrop_credibility":3,"airdrop_source":"Community Discord","fdv_estimate":"$500M","fdv_credibility":3,"fdv_comparable":"Uniswap $3B — estimate in range","socials":{"twitter":"https://twitter.com/h","website":"https://site.com"},"red_flags":["r"],"green_flags":["g"],"logo_url":""}]}\nRules: status=launch/tge/soon/airdrop/' + NEXT_YEAR + '/rumor/presale. overall_credibility 1-5 (5=official confirmed). tge_date=LATEST official announcement. 10+ projects. Start with {:';
 
@@ -1873,6 +1887,7 @@ function startAirdropScan() {
 
   document.getElementById('adMain').innerHTML = buildProgLoadingHtml('◎ SCAN AIRDROPS', ['Recherche airdrops ' + NOW_YEAR + '-' + NEXT_YEAR + ' — JSON direct...'], 'var(--acc)');
   scanProgStart(120, 'var(--acc)');
+  startFunnyMsgs();
 
   var searchMsg = 'TODAY IS MARCH ' + NOW_YEAR + '. Search for crypto airdrops ' + NOW_YEAR + '-' + NEXT_YEAR + '. Find confirmed AND rumored. Key projects: ZKsync S2, Scroll, Linea, Movement, Monad, Babylon BABY, Taiko, Sophon, Nillion, Initia, MegaETH, active points programs. Return ONLY valid JSON starting with {:\n{"airdrops":[{"name":"Project","ticker":"TOKEN","type":"confirmed","status":"active","blockchain":"Ethereum L2","date":"Q2 ' + NOW_YEAR + '","snapshot":"TBA","funding":"$50M","investors":"a16z","description":"Desc.","total_supply":1000000000,"total_supply_pct":10,"eligible_wallets":"500000","estimated_value":"100-5000","estimated_price":"$0.50","credibility":null,"credibility_reason":"","tasks":[{"type":"chain","label":"Task","points":30}],"red_flags":["r"],"green_flags":["g"],"socials":{"twitter":"","website":""},"logo_url":""}]}\ntype:confirmed/rumor. credibility null for confirmed, 1-5 for rumors. 10+ airdrops. Start with {:';
 
@@ -2071,6 +2086,7 @@ function scanProgAdvance(toPct, newEstSec) {
 
 function scanProgFinish() {
   if (_scanProg.timer) { clearInterval(_scanProg.timer); _scanProg.timer = null; }
+  stopFunnyMsgs();
   var bar = document.getElementById('pb-bar');
   var lbl = document.getElementById('pb-label');
   if (bar) bar.style.width = '100%';
@@ -2113,6 +2129,53 @@ function parseAge(age) {
   return 9999;
 }
 
+var SCAN_JOKES = [
+  '🔍 Interrogatoire intensif de la blockchain en cours...',
+  '🕵️ Vérification si le créateur a un casier judiciaire...',
+  '💸 Calcul du yacht que le dev va s\'acheter avec tes fonds...',
+  '🦆 Détection de memecoins de canard radioactif...',
+  '📱 Stalking complet du Twitter du fondateur...',
+  '🧅 Pelage méthodique des couches d\'anonymat...',
+  '⛓️ Suivi des fonds jusqu\'aux îles Caïmans...',
+  '📉 Simulation de la courbe en -99% à J+3...',
+  '🐋 Localisation GPS des baleines dormantes...',
+  '🎭 Scan des faux partenariats avec Elon Musk...',
+  '🤖 L\'IA consulte 47 onglets en simultané, merci de patienter...',
+  '🎰 Mesure du quotient casino-illégal du contrat...',
+  '🏃 Simulation de la vitesse de fuite optimale du dev...',
+  '🧠 Analyse des whitepapers copiés-collés de Wikipedia...',
+  '👀 Vérification discrète si Binance est au courant...',
+  '🔥 Contrôle de la température du rug pull...',
+  '🎪 Détection du nombre de shills payés 3$ sur Fiverr...',
+  '🛸 Contact avec les holders aliens de la première heure...',
+  '💀 Comptage des tokens morts les 6 derniers mois...',
+  '📊 Calcul du ratio bullshit/substance du whitepaper...'
+];
+var _funnyTimer = null;
+
+function startFunnyMsgs() {
+  stopFunnyMsgs();
+  var idx = Math.floor(Math.random() * SCAN_JOKES.length);
+  var el = document.getElementById('funnyMsg');
+  if (el) el.textContent = SCAN_JOKES[idx];
+  _funnyTimer = setInterval(function() {
+    var el2 = document.getElementById('funnyMsg');
+    if (!el2) { stopFunnyMsgs(); return; }
+    el2.style.opacity = '0';
+    setTimeout(function() {
+      var el3 = document.getElementById('funnyMsg');
+      if (!el3) return;
+      idx = (idx + 1) % SCAN_JOKES.length;
+      el3.textContent = SCAN_JOKES[idx];
+      el3.style.opacity = '1';
+    }, 380);
+  }, 3800);
+}
+
+function stopFunnyMsgs() {
+  if (_funnyTimer) { clearInterval(_funnyTimer); _funnyTimer = null; }
+}
+
 function buildProgLoadingHtml(title, steps, color) {
   color = color || 'var(--acc)';
   return '<div class="scan-loading">' +
@@ -2120,6 +2183,7 @@ function buildProgLoadingHtml(title, steps, color) {
     '<div class="prog-bar-w"><div class="prog-bar" id="pb-bar" style="background:' + color + '"></div></div>' +
     '<div class="prog-label" id="pb-label" style="color:' + color + '">0% · démarrage...</div>' +
     '<div class="scan-steps">' + steps.map(function(s,i){return '<div class="scan-step '+(i===0?'active':'')+'" id="ss_'+i+'">'+s+'</div>';}).join('') + '</div>' +
+    '<div class="funny-msg" id="funnyMsg"></div>' +
     '</div>';
 }
 
@@ -2684,6 +2748,7 @@ function startAddrScan() {
   waScanning = true;
   var btn = document.getElementById('waScanBtn');
   btn.disabled = true; btn.textContent = '⏳ ANALYSE...';
+  startFunnyMsgs();
 
   var steps = [
     '🔍 Recherche sur Etherscan, Solscan, BscScan...',
@@ -2773,6 +2838,7 @@ function startAddrScan() {
     })
     .finally(function() {
       waScanning = false;
+      stopFunnyMsgs();
       btn.disabled = false;
       btn.textContent = '⬡  ANALYSER';
     });
@@ -3377,30 +3443,69 @@ document.addEventListener('click', function(e) {
 });
 
 // ═══════════════════════════════════════════════════════
-// ── SPACESHIP THEME ────────────────────────────────────
+// ── THEME SYSTEM (deux modes indépendants) ─────────────
 // ═══════════════════════════════════════════════════════
-var currentTheme = localStorage.getItem('cs6_theme') || 'dark';
+var _spaceOn = localStorage.getItem('cs6_space') === '1';
+var _wormOn  = localStorage.getItem('cs6_worm')  === '1';
+// legacy compat
+var currentTheme = _spaceOn ? 'spaceship' : _wormOn ? 'wormhole' : 'dark';
 var spaceAnim = null;
 
-function applyTheme(theme) {
-  currentTheme = theme;
-  localStorage.setItem('cs6_theme', theme);
-  document.body.classList.toggle('theme-spaceship', theme === 'spaceship');
-  var btn = document.getElementById('themeBtn');
-  if (btn) {
-    if (theme === 'spaceship') btn.textContent = '🌀';
-    else if (theme === 'wormhole') btn.textContent = '🌑';
-    else btn.textContent = '🚀';
-  }
-  if (theme === 'spaceship') startSpaceship();
-  else stopSpaceship();
-  if (theme === 'wormhole') activateWormhole();
+function _updateThemeBtns() {
+  var sb = document.getElementById('spaceBtn');
+  var wb = document.getElementById('wormBtn');
+  if (sb) sb.classList.toggle('t-active-space', _spaceOn);
+  if (wb) wb.classList.toggle('t-active-worm',  _wormOn);
 }
 
-function toggleTheme() {
-  var next = currentTheme === 'dark' ? 'spaceship' : currentTheme === 'spaceship' ? 'wormhole' : 'dark';
-  applyTheme(next);
+function toggleSpaceTheme() {
+  _spaceOn = !_spaceOn;
+  localStorage.setItem('cs6_space', _spaceOn ? '1' : '0');
+  if (_spaceOn) {
+    // désactiver wormhole ambiant si actif (les deux en même temps = illisible)
+    _wormOn = false;
+    localStorage.setItem('cs6_worm', '0');
+    stopWormholeAmbient();
+    currentTheme = 'spaceship';
+    document.body.classList.add('theme-spaceship');
+    document.body.classList.remove('theme-wormhole');
+    startSpaceship();
+  } else {
+    currentTheme = 'dark';
+    document.body.classList.remove('theme-spaceship');
+    stopSpaceship();
+  }
+  _updateThemeBtns();
 }
+
+function toggleWormTheme() {
+  _wormOn = !_wormOn;
+  localStorage.setItem('cs6_worm', _wormOn ? '1' : '0');
+  if (_wormOn) {
+    _spaceOn = false;
+    localStorage.setItem('cs6_space', '0');
+    stopSpaceship();
+    currentTheme = 'wormhole';
+    document.body.classList.remove('theme-spaceship');
+    document.body.classList.add('theme-wormhole');
+    startWormholeAmbient();
+  } else {
+    currentTheme = 'dark';
+    document.body.classList.remove('theme-wormhole');
+    stopWormholeAmbient();
+  }
+  _updateThemeBtns();
+}
+
+// compat wormhole one-shot (singularity)
+function applyTheme(theme) {
+  if (theme === 'spaceship') { _spaceOn = true; _wormOn = false; toggleSpaceTheme(); return; }
+  if (theme === 'wormhole')  { _wormOn  = true; _spaceOn = false; toggleWormTheme(); return; }
+  // dark
+  if (_spaceOn) toggleSpaceTheme();
+  if (_wormOn)  toggleWormTheme();
+}
+function toggleTheme() { toggleSpaceTheme(); } // legacy
 
 function startSpaceship() {
   var canvas = document.getElementById('spaceCanvas');
@@ -3449,6 +3554,137 @@ function stopSpaceship() {
   var canvas = document.getElementById('spaceCanvas');
   if (canvas) { var ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height); }
 }
+
+// ── WORMHOLE AMBIENT (trou noir persistant en fond) ────
+var _wormAnim = null;
+
+function startWormholeAmbient() {
+  var canvas = document.getElementById('wormCanvas');
+  if (!canvas) return;
+  var W = canvas.width  = window.innerWidth;
+  var H = canvas.height = window.innerHeight;
+  var ctx = canvas.getContext('2d');
+  var cx = W / 2, cy = H / 2;
+  var BH_R  = Math.min(W, H) * 0.11;
+  var t = 0;
+
+  // Particules orbitales
+  var orb = [];
+  for (var i = 0; i < 180; i++) {
+    var ang = Math.random() * Math.PI * 2;
+    var dist = BH_R * 1.6 + Math.random() * Math.min(W, H) * 0.38;
+    orb.push({ ang: ang, dist: dist, spd: (0.006 + Math.random() * 0.02) * (Math.random() < .5 ? 1 : -1),
+               fall: 0.1 + Math.random() * 0.5, sz: 0.5 + Math.random() * 1.8,
+               hue: 260 + Math.random() * 80, op: 0.3 + Math.random() * 0.6 });
+  }
+
+  // Étoiles en fond (statiques, calculées une fois)
+  var bgStars = [];
+  for (var j = 0; j < 280; j++) {
+    bgStars.push({ x: Math.random() * W, y: Math.random() * H,
+                   r: Math.random() < .07 ? 1.5 : 0.7,
+                   op: 0.15 + Math.random() * 0.55 });
+  }
+
+  if (_wormAnim) cancelAnimationFrame(_wormAnim);
+
+  function frame() {
+    if (!_wormOn) return;
+    t++;
+    ctx.fillStyle = 'rgba(3,0,10,0.22)';
+    ctx.fillRect(0, 0, W, H);
+
+    // ── Étoiles lensées ──
+    bgStars.forEach(function(s) {
+      var dx = s.x - cx, dy = s.y - cy, d = Math.sqrt(dx*dx + dy*dy);
+      if (d < BH_R * 1.1) return;
+      var sx = s.x, sy = s.y;
+      if (d < BH_R * 4.5) {
+        var a = Math.atan2(dy, dx);
+        var bend = BH_R * BH_R / (d * d) * 180;
+        sx += Math.cos(a + Math.PI * 0.5) * bend;
+        sy += Math.sin(a + Math.PI * 0.5) * bend;
+      }
+      ctx.fillStyle = 'rgba(200,180,255,' + s.op + ')';
+      ctx.fillRect(sx, sy, s.r, s.r);
+    });
+
+    var dkO = BH_R * 3.6, dkI = BH_R * 1.4, asp = 0.36;
+
+    // ── Disque d'accrétion (dos — arc supérieur) ──
+    for (var ri = 0; ri < 60; ri++) {
+      var frac = ri / 60;
+      var rr = dkO - (dkO - dkI) * frac;
+      var hot = frac;
+      var rc = 255, gc = Math.floor(255 - hot * 130), bc = Math.floor(Math.max(0, 80 - hot * 80));
+      var op2 = (0.02 + hot * 0.18) * 0.55;
+      ctx.beginPath(); ctx.ellipse(cx, cy, rr, rr * asp, 0, Math.PI, 0, true);
+      ctx.strokeStyle = 'rgba('+rc+','+gc+','+bc+','+op2+')';
+      ctx.lineWidth = (dkO - dkI) / 60 * 2.2; ctx.stroke();
+    }
+
+    // ── Particules orbitales ──
+    orb.forEach(function(p) {
+      p.ang  += p.spd;
+      p.dist  = Math.max(BH_R * 0.9, p.dist - p.fall * 0.12);
+      if (p.dist <= BH_R * 0.92) { p.dist = BH_R * 2.2 + Math.random() * Math.min(W,H) * 0.3; p.ang = Math.random()*Math.PI*2; }
+      var px = cx + Math.cos(p.ang) * p.dist;
+      var py = cy + Math.sin(p.ang) * p.dist * asp;
+      var al = p.op * Math.min(1, (p.dist - BH_R) / BH_R);
+      ctx.save(); ctx.shadowColor = 'hsla('+p.hue+',80%,70%,.5)'; ctx.shadowBlur = 5;
+      ctx.fillStyle = 'hsla('+p.hue+',80%,70%,'+al+')';
+      ctx.beginPath(); ctx.arc(px, py, p.sz, 0, Math.PI*2); ctx.fill(); ctx.restore();
+    });
+
+    // ── Disque d'accrétion (face — arc inférieur) ──
+    for (var ri2 = 0; ri2 < 60; ri2++) {
+      var frac2 = ri2 / 60;
+      var rr2 = dkO - (dkO - dkI) * frac2;
+      var hot2 = frac2;
+      var rc2 = 255, gc2 = Math.floor(255 - hot2 * 130), bc2 = Math.floor(Math.max(0, 80 - hot2 * 80));
+      var op3 = (0.02 + hot2 * 0.18) * 1.7;
+      ctx.beginPath(); ctx.ellipse(cx, cy, rr2, rr2 * asp, 0, 0, Math.PI, false);
+      ctx.strokeStyle = 'rgba('+rc2+','+gc2+','+bc2+','+op3+')';
+      ctx.lineWidth = (dkO - dkI) / 60 * 2.2; ctx.stroke();
+    }
+
+    // ── Point chaud Doppler (orbite lente) ──
+    var ha = Math.PI * 0.55 + t * 0.012;
+    var hx = cx + Math.cos(ha) * BH_R * 1.85, hy = cy + Math.sin(ha) * BH_R * 1.85 * asp;
+    var hg = ctx.createRadialGradient(hx, hy, 0, hx, hy, BH_R * 0.9);
+    hg.addColorStop(0, 'rgba(255,240,200,.7)'); hg.addColorStop(.3, 'rgba(255,160,60,.4)');
+    hg.addColorStop(.7, 'rgba(200,60,10,.15)'); hg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(hx, hy, BH_R * 0.9, 0, Math.PI*2); ctx.fill();
+
+    // ── Anneau photonique ──
+    ctx.save(); ctx.shadowColor = 'rgba(220,180,255,1)'; ctx.shadowBlur = 18;
+    ctx.strokeStyle = 'rgba(210,170,255,.88)'; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.ellipse(cx, cy, BH_R * 1.32, BH_R * 1.32 * asp, 0, 0, Math.PI*2); ctx.stroke();
+    ctx.strokeStyle = 'rgba(180,120,255,.35)'; ctx.lineWidth = 0.7;
+    ctx.beginPath(); ctx.ellipse(cx, cy, BH_R * 1.18, BH_R * 1.18 * asp, 0, 0, Math.PI*2); ctx.stroke();
+    ctx.restore();
+
+    // ── Ombre (event horizon) ──
+    var sg = ctx.createRadialGradient(cx, cy, 0, cx, cy, BH_R * 1.04);
+    sg.addColorStop(0, 'rgba(0,0,0,1)'); sg.addColorStop(.88, 'rgba(0,0,0,1)'); sg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(cx, cy, BH_R * 1.04, 0, Math.PI*2); ctx.fill();
+
+    // ── Halo externe ──
+    var eg = ctx.createRadialGradient(cx, cy, dkO, cx, cy, dkO * 2.2);
+    eg.addColorStop(0, 'rgba(140,60,220,.055)'); eg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = eg; ctx.beginPath(); ctx.arc(cx, cy, dkO * 2.2, 0, Math.PI*2); ctx.fill();
+
+    _wormAnim = requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+function stopWormholeAmbient() {
+  if (_wormAnim) { cancelAnimationFrame(_wormAnim); _wormAnim = null; }
+  var canvas = document.getElementById('wormCanvas');
+  if (canvas) { var ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height); }
+}
+
 
 // ═══════════════════════════════════════════════════════
 // ── SINGULARITY & WORMHOLE ──────────────────────────────
@@ -3960,7 +4196,10 @@ function gameWin() {
 // ── INIT LANG + THEME ──
 (function() {
   applyLang();
-  applyTheme(currentTheme);
+  // Restore themes from localStorage
+  if (_spaceOn) { document.body.classList.add('theme-spaceship'); startSpaceship(); }
+  if (_wormOn)  { document.body.classList.add('theme-wormhole');  startWormholeAmbient(); }
+  _updateThemeBtns();
   // Init singularity count display
   var countEl = document.getElementById('singCount');
   if (countEl) countEl.textContent = _singularityCount;
