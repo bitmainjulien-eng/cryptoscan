@@ -159,6 +159,15 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
                 self._json_error(401, "Clé API manquante.")
                 return
 
+            # Cap max_tokens à 8000 (limite sûre Claude Sonnet)
+            try:
+                body = json.loads(payload)
+                if body.get("max_tokens", 0) > 8000:
+                    body["max_tokens"] = 8000
+                    payload = json.dumps(body).encode()
+            except Exception:
+                pass
+
             # Job_id déterministe = hash du payload (idempotent si retry)
             job_id = hashlib.md5(payload).hexdigest()
 
@@ -261,7 +270,7 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
             req.add_header("anthropic-beta",    "web-search-2025-03-05")
 
             try:
-                with urllib.request.urlopen(req, timeout=180) as r:
+                with urllib.request.urlopen(req, timeout=120) as r:
                     return r.status, r.read()
             except urllib.error.HTTPError as e:
                 if e.code == 429:
