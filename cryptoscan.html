@@ -64,6 +64,9 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Space Mono',monospa
 .btn-scan{background:var(--acc);color:#000;padding:10px 22px;font-size:11px;font-family:'Space Mono',monospace;font-weight:700;border:none;cursor:pointer;letter-spacing:1px;transition:all .15s;white-space:nowrap;margin-left:auto;display:flex;align-items:center;gap:7px}
 .btn-scan:hover:not(:disabled){background:#55ffaa;transform:translateY(-1px)}
 .btn-scan:disabled{background:var(--mut);cursor:not-allowed;opacity:.7}
+.cost-pill{display:none;align-items:center;gap:4px;font-family:'Space Mono',monospace;font-size:9px;color:var(--acc2);background:rgba(0,255,136,.07);border:1px solid rgba(0,255,136,.25);padding:4px 9px;white-space:nowrap;margin-left:6px}
+.cost-pill.show{display:flex}
+.cost-pill .cp-icon{font-size:10px;opacity:.7}
 
 /* FILTER BAR */
 .fbar{display:flex;align-items:center;gap:5px;padding:7px 20px;background:var(--bg);border-bottom:1px solid var(--bdr);flex-wrap:wrap}
@@ -796,6 +799,7 @@ body.theme-spaceship .fm-overlay,body.theme-spaceship .modal-overlay{backdrop-fi
     <span class="src-lbl">SOURCES</span>
     <div id="srcBtns" style="display:flex;gap:7px;flex-wrap:wrap"></div>
     <button class="btn-scan" id="scanBtn">▶ &nbsp; LANCER LE SCAN</button>
+    <span class="cost-pill" id="costPill0"><span class="cp-icon">◈</span><span id="costVal0">~$0.0000</span></span>
   </div>
   <div class="fbar">
     <span class="fbar-lbl">FILTRER</span>
@@ -827,6 +831,7 @@ body.theme-spaceship .fm-overlay,body.theme-spaceship .modal-overlay{backdrop-fi
           <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622z"/></svg>
           SCANNER X
         </button>
+        <span class="cost-pill" id="costPill1"><span class="cp-icon">◈</span><span id="costVal1">~$0.0000</span></span>
       </div>
       <div class="filter-chips" id="xChips">
         <div class="chip active" data-xf="all">TOUS</div>
@@ -865,6 +870,7 @@ body.theme-spaceship .fm-overlay,body.theme-spaceship .modal-overlay{backdrop-fi
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
       SCANNER AIRDROPS
     </button>
+    <span class="cost-pill" id="costPill2"><span class="cp-icon">◈</span><span id="costVal2">~$0.0000</span></span>
   </div>
   <div class="main" id="adMain">
     <div class="empty"><span class="empty-hex">◎</span><div class="empty-t">Scanner d'Airdrops</div><div class="empty-s">Airdrops confirmés &amp; rumeurs avec score de crédibilité 1-5<br>Simulateur intégré pour estimer vos gains<br><br><strong style="color:var(--acc)">Cliquez SCANNER AIRDROPS</strong></div></div>
@@ -951,6 +957,7 @@ body.theme-spaceship .fm-overlay,body.theme-spaceship .modal-overlay{backdrop-fi
       <div class="wa-search-row">
         <input type="text" id="waAddr" placeholder="0x... ou adresse Solana, BTC, ou tout réseau — coller ici" autocomplete="off" spellcheck="false" maxlength="90">
         <button class="btn-wa-scan" id="waScanBtn">⬡ &nbsp;ANALYSER</button>
+        <span class="cost-pill" id="costPill3"><span class="cp-icon">◈</span><span id="costVal3">~$0.0000</span></span>
       </div>
     </div>
     <div id="waMain">
@@ -981,6 +988,7 @@ body.theme-spaceship .fm-overlay,body.theme-spaceship .modal-overlay{backdrop-fi
       <div class="rp-search-row">
         <input type="text" id="rpQuery" placeholder="Nom du projet, ticker ou description... (ex: Kaito, KINTO, zkSync)">
         <button class="btn-rp-scan" id="rpScanBtn">⬡ &nbsp;ANALYSER</button>
+        <span class="cost-pill" id="costPill4"><span class="cp-icon">◈</span><span id="costVal4">~$0.0000</span></span>
       </div>
       <div class="rp-hint">✦ TYPOS TOLÉRÉS — L'IA trouvera les projets similaires si le nom n'est pas exact ✦ CHAQUE REQUÊTE PEUT DURER 5-10 MINUTES ✦</div>
     </div>
@@ -1062,6 +1070,38 @@ let adResults = [], adFilter = 'all', adScanning = false;
 let currentAd = null;
 let rpScanning = false;
 let waScanning = false;
+
+// ═══ COST TRACKING ═══
+var _scanCost = 0;
+var _activeCostPillId = null;
+var PRICE_IN  = 3  / 1e6;  // $3  per 1M input tokens
+var PRICE_OUT = 15 / 1e6;  // $15 per 1M output tokens
+
+function _resetCost(pillId) {
+  _scanCost = 0;
+  _activeCostPillId = pillId;
+  // Hide pill at start of scan
+  var pill = document.getElementById(pillId);
+  if (pill) pill.classList.remove('show');
+}
+
+function _addCost(usage) {
+  if (!usage) return;
+  _scanCost += (usage.input_tokens  || 0) * PRICE_IN
+             + (usage.output_tokens || 0) * PRICE_OUT;
+  _updateCostPill();
+}
+
+function _updateCostPill() {
+  if (!_activeCostPillId) return;
+  var pill = document.getElementById(_activeCostPillId);
+  if (!pill) return;
+  var pillId = _activeCostPillId;
+  var valId  = pillId.replace('costPill', 'costVal');
+  var valEl  = document.getElementById(valId);
+  if (valEl) valEl.textContent = '~$' + _scanCost.toFixed(4);
+  pill.classList.add('show');
+}
 var xResultsSorted = [];
 var adResultsFiltered = [];
 
@@ -1330,6 +1370,7 @@ function callAPI(messages, useWebSearch, maxTokens) {
     .then(function(resp) {
       // Ancien serveur local : réponse directe Anthropic (contient "content")
       if (resp.content) {
+        if (resp.usage) _addCost(resp.usage);
         return (resp.content || []).filter(function(b) { return b.type === 'text'; }).map(function(b) { return b.text; }).join('');
       }
       // Nouveau serveur prod : réponse avec job_id → polling
@@ -1364,7 +1405,8 @@ function _pollJob(jobId, headers) {
             } else if (d.error) {
               reject(new Error(d.error.message || 'Erreur API'));
             } else {
-              // Résultat final Anthropic
+              // Résultat final Anthropic — extraire le coût
+              if (d.usage) _addCost(d.usage);
               var text = (d.content || []).filter(function(b) { return b.type === 'text'; }).map(function(b) { return b.text; }).join('');
               resolve(text);
             }
@@ -1567,6 +1609,7 @@ function startScan() {
   if (scanning) return;
   var srcs = getSrcs();
   if (!srcs.length) { log('Sélectionnez au moins une source.', 'e'); return; }
+  _resetCost('costPill0');
   scanning = true;
   document.getElementById('scanBtn').disabled = true;
   document.getElementById('scanBtn').textContent = '⏳ SCAN EN COURS…';
@@ -1644,6 +1687,7 @@ function startXScan() {
   if (xScanning) return;
   var query = document.getElementById('xQuery').value.trim();
   if (!query) return;
+  _resetCost('costPill1');
   xScanning = true;
   var btn = document.getElementById('xScanBtn');
   btn.disabled = true; btn.textContent = '⏳ SCAN...';
@@ -1791,6 +1835,7 @@ function renderX() {
 // ═══ AIRDROP SCANNER ═══
 function startAirdropScan() {
   if (adScanning) return;
+  _resetCost('costPill2');
   adScanning = true;
   var btn = document.getElementById('adScanBtn');
   btn.disabled = true; btn.textContent = '⏳ SCAN…';
@@ -2592,6 +2637,7 @@ function startAddrScan() {
   if (waScanning) return;
   var rawAddr = document.getElementById('waAddr').value.trim();
   if (!rawAddr) { document.getElementById('waAddr').focus(); return; }
+  _resetCost('costPill3');
   // Sanitize: remove spaces, keep only valid address chars
   var addr = rawAddr.replace(/\s/g,'').slice(0,90);
   // Basic validation: must contain at least hex or base58 chars
@@ -2816,6 +2862,7 @@ function startProjectSearch() {
   if (rpScanning) return;
   var query = document.getElementById('rpQuery').value.trim();
   if (!query) { document.getElementById('rpQuery').focus(); return; }
+  _resetCost('costPill4');
   rpScanning = true;
   var btn = document.getElementById('rpScanBtn');
   btn.disabled = true; btn.textContent = '⏳ ANALYSE...';
