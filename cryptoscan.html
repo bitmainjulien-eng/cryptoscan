@@ -1247,23 +1247,38 @@ function _pollJob(jobId, headers) {
   return new Promise(function(resolve, reject) {
     var maxAttempts = 180; // 6 minutes max (2s × 180)
     var attempt = 0;
+    var apiKey = (headers && headers['x-api-key']) || '';
     function poll() {
       attempt++;
       if (attempt > maxAttempts) { reject(new Error('Timeout : scan trop long')); return; }
-      fetch(API_BASE + '/api/job/' + jobId, {headers: {'x-api-key': (headers && headers['x-api-key']) || ''}})
-        .then(function(r) { return r.json(); })
-        .then(function(d) {
-          if (d.status === 'pending' || d.status === 'running') {
-            setTimeout(poll, 2000);
-          } else if (d.error) {
-            reject(new Error(d.error.message || 'Erreur API'));
-          } else {
-            // Résultat final Anthropic
-            var text = (d.content || []).filter(function(b) { return b.type === 'text'; }).map(function(b) { return b.text; }).join('');
-            resolve(text);
+      var fetchHeaders = {};
+      if (apiKey) fetchHeaders['x-api-key'] = apiKey;
+      fetch(API_BASE + '/api/job/' + jobId, {headers: fetchHeaders})
+        .then(function(r) {
+          var ct = r.headers.get('content-type') || '';
+          if (!ct.includes('application/json')) {
+            // Railway/proxy a renvoyé une page d'erreur non-JSON → retry
+            console.warn('Poll non-JSON response (status=' + r.status + '), retry in 3s...');
+            setTimeout(poll, 3000);
+            return;
           }
+          return r.json().then(function(d) {
+            if (d.status === 'pending' || d.status === 'running') {
+              setTimeout(poll, 2000);
+            } else if (d.error) {
+              reject(new Error(d.error.message || 'Erreur API'));
+            } else {
+              // Résultat final Anthropic
+              var text = (d.content || []).filter(function(b) { return b.type === 'text'; }).map(function(b) { return b.text; }).join('');
+              resolve(text);
+            }
+          });
         })
-        .catch(function(e) { reject(e); });
+        .catch(function(e) {
+          // Erreur réseau → retry silencieux
+          console.warn('Poll network error:', e.message, '— retry in 3s');
+          setTimeout(poll, 3000);
+        });
     }
     setTimeout(poll, 2000);
   });
