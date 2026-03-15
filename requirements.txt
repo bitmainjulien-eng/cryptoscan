@@ -1,0 +1,3 @@
+# CryptoScan — dépendances Python
+# Aucune dépendance externe requise (stdlib Python 3.8+)
+# Le fichier est présent pour que Railway/Render détecte un projet Python
