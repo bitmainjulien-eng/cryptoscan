@@ -1579,7 +1579,7 @@ function startScan() {
   var steps = ['Étape 1/2 — Recherche web...','Analyse créateurs...','Traçage contrats...','Étape 2/2 — Formatage JSON...','Génération courbes...'];
   var si = 0;
   document.getElementById('scanMain').innerHTML = buildProgLoadingHtml('⬡ DEEP SCAN EN COURS', steps, 'var(--acc)');
-  scanProgStart(120, 'var(--acc)');
+  scanProgStart(160, 'var(--acc)');
   var st = setInterval(function() {
     var el = document.getElementById('ss_' + si);
     if (el) el.classList.remove('active');
@@ -1588,9 +1588,26 @@ function startScan() {
     if (el2) el2.classList.add('active');
   }, 2000);
 
-  var searchMsg = 'Search for 20+ real crypto tokens newly listed in the last 48-72h on ' + srcs.join(', ') + '. ANTI-SCAM: verify every website URL is the OFFICIAL domain (cross-reference Twitter/CMC/CoinGecko). Return ONLY valid JSON starting with {, no text outside:\n{"tokens":[{"name":"Name","ticker":"TICK","chain":"Solana","age":"6h","score":7,"sources":["DexScreener"],"summary":"Description.","stats":{"MKT CAP":"$1M","VOL 24H":"$200K","PRIX":"$0.01","LIQUID.":"$150K"},"signals":[{"type":"pos","text":"positive"},{"type":"neg","text":"risk"},{"type":"neu","text":"neutral"}],"socials":{"twitter":"https://twitter.com/h","linkedin":"","youtube":"","website":"https://officialsite.com"},"creator":{"twitter":"@h","twitter_followers":"5000","twitter_age":"1yr","previous_tokens":["T(yr,result)"],"scam_history":"None","wallet_age":"1yr","doxxed":false,"team_size":"3","linkedin_verified":false,"red_flags":["r"],"green_flags":["g"]},"contract":{"address":"0x","verified":true,"renounced":false,"honeypot":false,"mint_disabled":true,"lp_locked":"6mo","top10_holders":"45%","dev_wallet":"3%","suspicious_txs":0,"linked_contracts":["CA"]},"market_context":"Context.","logo_url":"","price_curve":[0.01,0.012,0.015,0.018,0.016,0.021,0.025,0.023,0.028,0.032,0.036,0.04],"price_labels":["D","M1","M2","M3","M4","M5","M6","M7","M8","M9","M10","M12"]}]}\nRules: score 1-10. price_curve=12 realistic values. 20+ tokens minimum. Start with {:';
+  // Étape 1 : recherche web rapide (liste brute)
+  var step1Msg = 'Search ' + srcs.join(', ') + ' for 25+ real crypto tokens newly listed in the last 48-72h. For EACH token give: name, ticker, chain, listing age, price, market cap, volume 24h, liquidity, contract address, creator Twitter handle + followers + account age + previous tokens + scam history, LP lock status, top10 holders %, dev wallet %, honeypot status, audit status, official website (VERIFIED anti-scam), score 1-10. Write a numbered list covering at least 25 distinct tokens. Be concise but complete.';
 
-  callAPI([{role:'user', content: searchMsg}], true, 8000)
+  callAPI([{role:'user', content: step1Msg}], true, 4000)
+    .then(function(research) {
+      log('Recherche terminée — formatage ' + Math.round(research.length/100)/10 + 'k chars...', 'i');
+      scanProgAdvance(55, 88);
+      // Étape 2 : formatage JSON avec gros budget tokens
+      var fmtMsg = 'Format ALL tokens from this research as JSON. Include EVERY token found — minimum 20, ideally 25+. ONLY JSON start with {:\n\nRESEARCH:\n' + research.slice(0, 11000) + '\n\n'
+        + '{"tokens":[{"name":"Name","ticker":"TICK","chain":"Solana","age":"6h","score":7,"sources":["DexScreener"],'
+        + '"summary":"One sentence description.","stats":{"MKT CAP":"$1M","VOL 24H":"$200K","PRIX":"$0.01","LIQUID.":"$150K"},'
+        + '"signals":[["pos","good point"],["neg","risk"],["neu","neutral"]],'
+        + '"socials":{"twitter":"https://twitter.com/h","linkedin":"","youtube":"","website":"https://site.com"},'
+        + '"creator":{"twitter":"@h","twitter_followers":"5000","twitter_age":"1yr","previous_tokens":["T(result)"],"scam_history":"None","wallet_age":"1yr","doxxed":false,"team_size":"3","linkedin_verified":false,"red_flags":["r"],"green_flags":["g"]},'
+        + '"contract":{"address":"0x","verified":true,"renounced":false,"honeypot":false,"mint_disabled":true,"lp_locked":"6mo","top10_holders":"45%","dev_wallet":"3%","suspicious_txs":0,"linked_contracts":[]},'
+        + '"market_context":"Brief context.","logo_url":"",'
+        + '"price_curve":[1,1.2,1.5,1.3,1.8,2.1],"price_labels":["J","S1","S2","S3","M1","M2"]}]}\n\n'
+        + 'Rules: score 1-10. signals as arrays [type,text]. price_curve=6 realistic relative values. Include ALL 25+ tokens. Start with {:';
+      return callAPI([{role:'user', content: fmtMsg}], false, 14000);
+    })
     .then(function(jsonRaw) {
       var parsed = extractJSON(jsonRaw, 'tokens');
       if (!parsed) throw new Error('JSON introuvable');
