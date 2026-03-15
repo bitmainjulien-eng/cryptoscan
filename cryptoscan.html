@@ -232,6 +232,39 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Space Mono',monospa
 .x-desc{font-size:9px;color:var(--txt2);line-height:1.7;margin-bottom:10px;border-left:2px solid var(--bdr2);padding-left:10px}
 .x-tweet{background:var(--bg3);padding:8px 10px;font-size:9px;color:var(--txt2);line-height:1.6;margin-bottom:10px;border-left:2px solid rgba(0,212,255,.3);font-style:italic}
 .x-actions{display:flex;gap:7px;align-items:center;border-top:1px solid var(--bdr);padding-top:10px}
+/* ── LANG SELECTOR ── */
+.lang-wrap{position:relative;display:flex;align-items:center;gap:8px}
+.lang-btn{background:var(--bg3);border:1px solid var(--bdr2);color:var(--txt);font-size:11px;padding:5px 10px;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:'Space Mono',monospace;min-height:32px}
+.lang-btn:hover{border-color:var(--acc2)}
+.lang-drop{position:absolute;top:calc(100% + 4px);right:0;background:var(--bg2);border:1px solid var(--bdr2);min-width:160px;z-index:1000;display:none;max-height:320px;overflow-y:auto}
+.lang-drop.open{display:block}
+.lang-opt{padding:8px 12px;cursor:pointer;font-size:10px;font-family:'Space Mono',monospace;display:flex;align-items:center;gap:8px;color:var(--txt2);transition:background .15s}
+.lang-opt:hover,.lang-opt.active{background:var(--bg3);color:var(--acc)}
+/* ── THEME TOGGLE ── */
+.theme-btn{background:var(--bg3);border:1px solid var(--bdr2);color:var(--txt);font-size:13px;padding:5px 10px;cursor:pointer;min-height:32px;transition:border-color .2s,background .2s}
+.theme-btn:hover{border-color:var(--acc2);background:var(--bg3)}
+/* ── SPACESHIP THEME ── */
+body.theme-spaceship{--bg:#00000a;--bg2:#050510;--bg3:#080818;--bdr:rgba(100,160,255,.12);--bdr2:rgba(100,160,255,.2);--acc:#60c8ff;--acc-d:rgba(96,200,255,.12);--acc2:#a78bfa;--acc2d:rgba(167,139,250,.12);--acc3:#f472b6;--txt:#d0e8ff;--txt2:#8ba8cc;--mut:#4a6a8a}
+body.theme-spaceship #spaceCanvas{display:block!important}
+body.theme-spaceship .topbar,body.theme-spaceship .apibar,body.theme-spaceship .nav-tabs,body.theme-spaceship .fbar,body.theme-spaceship .srcbar{background:rgba(5,5,20,.85)!important;backdrop-filter:blur(8px)}
+body.theme-spaceship .card,body.theme-spaceship .x-card,body.theme-spaceship .ad-card,body.theme-spaceship .rp-card{background:rgba(5,5,20,.7)!important;backdrop-filter:blur(6px)}
+body.theme-spaceship .fm-overlay,body.theme-spaceship .modal-overlay{backdrop-filter:blur(10px)}
+#spaceCanvas{display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.app{position:relative;z-index:1}
+/* ── GAME PAGE ── */
+.game-wrap{display:flex;flex-direction:column;align-items:center;padding:20px 10px;min-height:100vh;background:transparent}
+.game-hdr{width:100%;max-width:700px;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-family:'Space Mono',monospace}
+.game-score-lbl{font-size:9px;color:var(--mut);margin-bottom:2px}
+.game-score-val{font-size:18px;font-weight:700;color:var(--acc)}
+.game-lives{display:flex;gap:4px;font-size:16px}
+.game-level-pill{font-size:9px;padding:3px 10px;border:1px solid var(--acc2);color:var(--acc2);background:var(--acc2d)}
+#gameCanvas{border:1px solid var(--bdr2);background:#000008;max-width:700px;width:100%;touch-action:none;cursor:crosshair}
+.game-ctrl-hint{font-size:8px;color:var(--mut);margin-top:8px;text-align:center;font-family:'Space Mono',monospace}
+.game-menu{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;z-index:10}
+.game-title{font-family:'Syne',sans-serif;font-size:28px;font-weight:900;background:linear-gradient(135deg,#ffd700,#ff6b00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+.game-sub{font-size:10px;color:var(--mut);margin-bottom:20px;font-family:'Space Mono',monospace}
+.game-start-btn{background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;color:#000;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;padding:12px 28px;cursor:pointer;letter-spacing:2px;transition:transform .15s,box-shadow .15s}
+.game-start-btn:hover{transform:scale(1.05);box-shadow:0 0 20px rgba(96,200,255,.4)}
 /* Credibility bubble */
 .cred-bubble{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px solid;font-family:'Space Mono',monospace;cursor:default;z-index:2}
 .cred-bubble .cb-num{font-size:11px;font-weight:700;line-height:1}
@@ -692,12 +725,20 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Space Mono',monospa
 <div class="app">
 
 <!-- TOPBAR -->
+<canvas id="spaceCanvas"></canvas>
 <div class="topbar">
   <div style="display:flex;align-items:center">
     <span class="logo-c">CRYPTO</span><span class="logo-s">SCAN</span>
     <span class="logo-v">DEEP INTELLIGENCE v6.0</span>
   </div>
-  <div class="status-pill"><div class="dot" id="sDot"></div><span id="sTxt">EN ATTENTE</span></div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div class="status-pill"><div class="dot" id="sDot"></div><span id="sTxt" data-i18n="STATUS_WAIT">EN ATTENTE</span></div>
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Changer de thème">🚀</button>
+    <div class="lang-wrap">
+      <button class="lang-btn" id="langBtn" onclick="toggleLangDrop()"><span id="langFlag">🇫🇷</span> <span id="langCode">FR</span> ▾</button>
+      <div class="lang-drop" id="langDrop"></div>
+    </div>
+  </div>
 </div>
 
 <!-- SERVER BAR -->
@@ -742,7 +783,10 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Space Mono',monospa
   </div>
   <div class="tab" id="tab-wallet" data-tab="wallet">
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
-    ANALYSE ADRESSE <span class="badge-new" style="background:rgba(255,107,53,.2);color:var(--acc3)">NEW</span>
+    <span data-i18n="NAV_WALLET">ANALYSE ADRESSE</span> <span class="badge-new" style="background:rgba(255,107,53,.2);color:var(--acc3)">NEW</span>
+  </div>
+  <div class="tab" id="tab-game" data-tab="game">
+    🎮 <span data-i18n="NAV_GAME">ARCADE</span>
   </div>
 </div>
 
@@ -975,6 +1019,37 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Space Mono',monospa
   </div>
 </div>
 
+<!-- PAGE GAME -->
+<div id="page-game" style="display:none">
+  <div class="game-wrap">
+    <div class="game-hdr">
+      <div>
+        <div class="game-score-lbl" data-i18n="GAME_SCORE">SCORE</div>
+        <div class="game-score-val" id="gScore">0</div>
+      </div>
+      <div style="text-align:center">
+        <div class="game-title" style="font-size:16px;margin:0">₿ CRYPTO INVADERS</div>
+        <div class="game-level-pill" id="gLevel">NIVEAU 1</div>
+      </div>
+      <div style="text-align:right">
+        <div class="game-score-lbl" data-i18n="GAME_LIVES">VIES</div>
+        <div class="game-lives" id="gLives">₿ ₿ ₿</div>
+      </div>
+    </div>
+    <div style="position:relative;width:100%;max-width:700px">
+      <canvas id="gameCanvas" height="520"></canvas>
+      <div id="gameOverlay" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px"></div>
+    </div>
+    <div class="game-ctrl-hint" id="gHint">← → ou A/D : déplacer &nbsp;|&nbsp; ESPACE ou clic : tirer &nbsp;|&nbsp; Tactile : boutons ci-dessous</div>
+    <div style="display:flex;gap:16px;margin-top:12px">
+      <button class="btn-deep" id="gLeft" style="font-size:18px;padding:12px 24px;min-width:70px" ontouchstart="gKeys.left=true" ontouchend="gKeys.left=false">◀</button>
+      <button class="btn-deep" id="gFire" style="font-size:18px;padding:12px 24px;min-width:70px" ontouchstart="gFire()">🔴 FEU</button>
+      <button class="btn-deep" id="gRight" style="font-size:18px;padding:12px 24px;min-width:70px" ontouchstart="gKeys.right=true" ontouchend="gKeys.right=false">▶</button>
+    </div>
+    <div style="margin-top:12px;font-size:9px;color:var(--mut);font-family:'Space Mono',monospace" id="gHiScore">MEILLEUR SCORE : 0</div>
+  </div>
+</div>
+
 <script>
 // ═══ GLOBALS ═══
 const API_BASE = window.location.origin;
@@ -1108,13 +1183,14 @@ function bindButtons() {
 
 // ═══ TABS ═══
 function showTab(tab) {
-  ['scan','x','top7','airdrops','swap','search','wallet'].forEach(function(t) {
+  ['scan','x','top7','airdrops','swap','search','wallet','game'].forEach(function(t) {
     var page = document.getElementById('page-' + t);
     var tabEl = document.getElementById('tab-' + t);
     if (page) page.style.display = t === tab ? 'block' : 'none';
     if (tabEl) tabEl.classList.toggle('active', t === tab);
   });
   if (tab === 'top7' && allTokens.length) renderTop7();
+  if (tab === 'game') initGame();
 }
 
 // ═══ KEY ═══
@@ -3060,6 +3136,516 @@ var DEMO_AIRDROPS = [
   {name:"MegaETH",ticker:"MEGA",type:"rumor",status:"upcoming",blockchain:"Ethereum L2",date:"" + NEXT_YEAR,snapshot:"TBA",funding:"$20M raised",investors:"Dragonfly, Figment",description:"L2 100K TPS. Testnet records. Airdrop probable basé sur utilisation testnet.",total_supply:1000000000,total_supply_pct:8,eligible_wallets:"200000",estimated_value:"500-8000 MEGA",estimated_price:"0.50",credibility:4,credibility_reason:"$20M Dragonfly, testnet records, tech unique = fort potentiel. Pas de points system confirmé (4/5).",tasks:[{type:"chain",label:"Testnet MegaETH",points:40},{type:"defi",label:"dApps testnet",points:35},{type:"social",label:"Discord + quests",points:25}],red_flags:["Pas de points system public"],green_flags:["$20M Dragonfly","Testnet records"],socials:{twitter:"https://twitter.com/megaeth_labs",website:"https://megaeth.systems"},logo_url:""},
   {name:"Nillion",ticker:"NIL",type:"confirmed",status:"upcoming",blockchain:"Nillion L1",date:"H1 " + NEXT_YEAR,snapshot:"TBA",funding:"$65M raised",investors:"a16z, CoinFund, Mechanism Capital",description:"Calcul privé décentralisé. TGE + airdrop confirmés H1 " + NEXT_YEAR + ". Programme testnet NilChain.",total_supply:1000000000,total_supply_pct:10,eligible_wallets:"150000",estimated_value:"500-10000 NIL",estimated_price:"1.00",credibility:null,credibility_reason:"",tasks:[{type:"chain",label:"Testnet NilChain",points:35},{type:"chain",label:"Nœuds réseau",points:30},{type:"defi",label:"Blind computations",points:25},{type:"social",label:"Referrals",points:10}],red_flags:["Concept technique"],green_flags:["$65M a16z","Airdrop confirmé","150K wallets"],socials:{twitter:"https://twitter.com/nillionnetwork",website:"https://nillion.com"},logo_url:""},
 ];
+
+// ═══════════════════════════════════════════════════════
+// ── I18N : SYSTÈME DE TRADUCTIONS ──────────────────────
+// ═══════════════════════════════════════════════════════
+var LANGS = {
+  fr:{flag:'🇫🇷',code:'FR',name:'Français',dir:'ltr',
+    STATUS_WAIT:'EN ATTENTE',NAV_SCANNER:'SCANNER LISTINGS',NAV_X:'SCANNER X',NAV_TOP7:'TOP 7',
+    NAV_AIRDROPS:'AIRDROPS',NAV_SWAP:'BEST SWAP',NAV_SEARCH:'RECHERCHE PROJET',NAV_WALLET:'ANALYSE ADRESSE',NAV_GAME:'ARCADE',
+    BTN_SCAN:'SCANNER',BTN_ANALYSE:'ANALYSER',BTN_SAVE:'SAUVEGARDER',APIKEY:'CLÉ API',
+    GAME_SCORE:'SCORE',GAME_LIVES:'VIES',GAME_LEVEL:'NIVEAU',GAME_START:'DÉMARRER',GAME_OVER:'GAME OVER',
+    GAME_WIN:'NIVEAU TERMINÉ !',GAME_RESTART:'REJOUER',GAME_HI:'MEILLEUR SCORE',
+    CTRL_HINT:'← → ou A/D : déplacer | ESPACE ou clic : tirer | Tactile : boutons'},
+  en:{flag:'🇬🇧',code:'EN',name:'English',dir:'ltr',
+    STATUS_WAIT:'STANDBY',NAV_SCANNER:'SCANNER LISTINGS',NAV_X:'X SCANNER',NAV_TOP7:'TOP 7',
+    NAV_AIRDROPS:'AIRDROPS',NAV_SWAP:'BEST SWAP',NAV_SEARCH:'PROJECT SEARCH',NAV_WALLET:'ADDRESS ANALYSIS',NAV_GAME:'ARCADE',
+    BTN_SCAN:'SCAN',BTN_ANALYSE:'ANALYSE',BTN_SAVE:'SAVE',APIKEY:'API KEY',
+    GAME_SCORE:'SCORE',GAME_LIVES:'LIVES',GAME_LEVEL:'LEVEL',GAME_START:'START GAME',GAME_OVER:'GAME OVER',
+    GAME_WIN:'LEVEL CLEAR!',GAME_RESTART:'PLAY AGAIN',GAME_HI:'HIGH SCORE',
+    CTRL_HINT:'← → or A/D : move | SPACE or click : shoot | Touch : buttons below'},
+  es:{flag:'🇪🇸',code:'ES',name:'Español',dir:'ltr',
+    STATUS_WAIT:'EN ESPERA',NAV_SCANNER:'SCANNER LISTADOS',NAV_X:'SCANNER X',NAV_TOP7:'TOP 7',
+    NAV_AIRDROPS:'AIRDROPS',NAV_SWAP:'MEJOR SWAP',NAV_SEARCH:'BUSCAR PROYECTO',NAV_WALLET:'ANÁLISIS DIRECCIÓN',NAV_GAME:'ARCADE',
+    BTN_SCAN:'ESCANEAR',BTN_ANALYSE:'ANALIZAR',BTN_SAVE:'GUARDAR',APIKEY:'CLAVE API',
+    GAME_SCORE:'PUNTOS',GAME_LIVES:'VIDAS',GAME_LEVEL:'NIVEL',GAME_START:'COMENZAR',GAME_OVER:'FIN DEL JUEGO',
+    GAME_WIN:'¡NIVEL SUPERADO!',GAME_RESTART:'JUGAR DE NUEVO',GAME_HI:'MEJOR PUNTUACIÓN',
+    CTRL_HINT:'← → o A/D : mover | ESPACIO o clic : disparar | Táctil : botones'},
+  pt:{flag:'🇧🇷',code:'PT',name:'Português',dir:'ltr',
+    STATUS_WAIT:'AGUARDANDO',NAV_SCANNER:'SCANNER LISTAGENS',NAV_X:'SCANNER X',NAV_TOP7:'TOP 7',
+    NAV_AIRDROPS:'AIRDROPS',NAV_SWAP:'MELHOR SWAP',NAV_SEARCH:'PESQUISA PROJETO',NAV_WALLET:'ANÁLISE ENDEREÇO',NAV_GAME:'ARCADE',
+    BTN_SCAN:'SCANEAR',BTN_ANALYSE:'ANALISAR',BTN_SAVE:'SALVAR',APIKEY:'CHAVE API',
+    GAME_SCORE:'PONTOS',GAME_LIVES:'VIDAS',GAME_LEVEL:'NÍVEL',GAME_START:'INICIAR',GAME_OVER:'FIM DE JOGO',
+    GAME_WIN:'NÍVEL COMPLETO!',GAME_RESTART:'JOGAR NOVAMENTE',GAME_HI:'MELHOR PONTUAÇÃO',
+    CTRL_HINT:'← → ou A/D : mover | ESPAÇO ou clique : atirar | Toque : botões'},
+  de:{flag:'🇩🇪',code:'DE',name:'Deutsch',dir:'ltr',
+    STATUS_WAIT:'BEREIT',NAV_SCANNER:'LISTING SCANNER',NAV_X:'X SCANNER',NAV_TOP7:'TOP 7',
+    NAV_AIRDROPS:'AIRDROPS',NAV_SWAP:'BESTER SWAP',NAV_SEARCH:'PROJEKT SUCHE',NAV_WALLET:'ADRESS ANALYSE',NAV_GAME:'ARCADE',
+    BTN_SCAN:'SCANNEN',BTN_ANALYSE:'ANALYSIEREN',BTN_SAVE:'SPEICHERN',APIKEY:'API SCHLÜSSEL',
+    GAME_SCORE:'PUNKTE',GAME_LIVES:'LEBEN',GAME_LEVEL:'LEVEL',GAME_START:'STARTEN',GAME_OVER:'SPIEL VORBEI',
+    GAME_WIN:'LEVEL GESCHAFFT!',GAME_RESTART:'NOCHMAL SPIELEN',GAME_HI:'HIGHSCORE',
+    CTRL_HINT:'← → oder A/D : bewegen | LEERTASTE : schießen | Touch : Schaltflächen'},
+  it:{flag:'🇮🇹',code:'IT',name:'Italiano',dir:'ltr',
+    STATUS_WAIT:'IN ATTESA',NAV_SCANNER:'SCANNER LISTING',NAV_X:'SCANNER X',NAV_TOP7:'TOP 7',
+    NAV_AIRDROPS:'AIRDROPS',NAV_SWAP:'MIGLIOR SWAP',NAV_SEARCH:'CERCA PROGETTO',NAV_WALLET:'ANALISI INDIRIZZO',NAV_GAME:'ARCADE',
+    BTN_SCAN:'SCANSIONA',BTN_ANALYSE:'ANALIZZA',BTN_SAVE:'SALVA',APIKEY:'CHIAVE API',
+    GAME_SCORE:'PUNTEGGIO',GAME_LIVES:'VITE',GAME_LEVEL:'LIVELLO',GAME_START:'INIZIA',GAME_OVER:'GAME OVER',
+    GAME_WIN:'LIVELLO COMPLETATO!',GAME_RESTART:'RIGIOCA',GAME_HI:'PUNTEGGIO MIGLIORE',
+    CTRL_HINT:'← → o A/D : muovere | SPAZIO : sparare | Touch : pulsanti'},
+  ru:{flag:'🇷🇺',code:'RU',name:'Русский',dir:'ltr',
+    STATUS_WAIT:'ОЖИДАНИЕ',NAV_SCANNER:'СКАНЕР ЛИСТИНГОВ',NAV_X:'СКАНЕР X',NAV_TOP7:'ТОП 7',
+    NAV_AIRDROPS:'АИРДРОПЫ',NAV_SWAP:'ЛУЧШИЙ СВОП',NAV_SEARCH:'ПОИСК ПРОЕКТА',NAV_WALLET:'АНАЛИЗ АДРЕСА',NAV_GAME:'АРКАДА',
+    BTN_SCAN:'СКАНИРОВАТЬ',BTN_ANALYSE:'АНАЛИЗ',BTN_SAVE:'СОХРАНИТЬ',APIKEY:'КЛЮЧ API',
+    GAME_SCORE:'ОЧКИ',GAME_LIVES:'ЖИЗНИ',GAME_LEVEL:'УРОВЕНЬ',GAME_START:'НАЧАТЬ',GAME_OVER:'ИГРА ОКОНЧЕНА',
+    GAME_WIN:'УРОВЕНЬ ПРОЙДЕН!',GAME_RESTART:'ИГРАТЬ СНОВА',GAME_HI:'РЕКОРД',
+    CTRL_HINT:'← → или A/D : движение | ПРОБЕЛ : стрелять | Тач : кнопки'},
+  zh:{flag:'🇨🇳',code:'ZH',name:'中文',dir:'ltr',
+    STATUS_WAIT:'等待中',NAV_SCANNER:'代币扫描',NAV_X:'X扫描',NAV_TOP7:'本周TOP7',
+    NAV_AIRDROPS:'空投',NAV_SWAP:'最优兑换',NAV_SEARCH:'项目搜索',NAV_WALLET:'地址分析',NAV_GAME:'街机游戏',
+    BTN_SCAN:'扫描',BTN_ANALYSE:'分析',BTN_SAVE:'保存',APIKEY:'API密钥',
+    GAME_SCORE:'得分',GAME_LIVES:'生命',GAME_LEVEL:'关卡',GAME_START:'开始游戏',GAME_OVER:'游戏结束',
+    GAME_WIN:'关卡完成！',GAME_RESTART:'再玩一次',GAME_HI:'最高分',
+    CTRL_HINT:'← → 或 A/D : 移动 | 空格或点击 : 射击 | 触控 : 下方按钮'},
+  ja:{flag:'🇯🇵',code:'JA',name:'日本語',dir:'ltr',
+    STATUS_WAIT:'待機中',NAV_SCANNER:'リスティングスキャン',NAV_X:'Xスキャナー',NAV_TOP7:'今週のTOP7',
+    NAV_AIRDROPS:'エアドロップ',NAV_SWAP:'ベストスワップ',NAV_SEARCH:'プロジェクト検索',NAV_WALLET:'アドレス分析',NAV_GAME:'アーケード',
+    BTN_SCAN:'スキャン',BTN_ANALYSE:'分析',BTN_SAVE:'保存',APIKEY:'APIキー',
+    GAME_SCORE:'スコア',GAME_LIVES:'ライフ',GAME_LEVEL:'レベル',GAME_START:'ゲームスタート',GAME_OVER:'ゲームオーバー',
+    GAME_WIN:'レベルクリア！',GAME_RESTART:'もう一度',GAME_HI:'ハイスコア',
+    CTRL_HINT:'← → または A/D : 移動 | スペースまたはクリック : 射撃 | タッチ : ボタン'},
+  ko:{flag:'🇰🇷',code:'KO',name:'한국어',dir:'ltr',
+    STATUS_WAIT:'대기 중',NAV_SCANNER:'리스팅 스캐너',NAV_X:'X 스캐너',NAV_TOP7:'이번 주 TOP7',
+    NAV_AIRDROPS:'에어드롭',NAV_SWAP:'최적 스왑',NAV_SEARCH:'프로젝트 검색',NAV_WALLET:'주소 분석',NAV_GAME:'아케이드',
+    BTN_SCAN:'스캔',BTN_ANALYSE:'분석',BTN_SAVE:'저장',APIKEY:'API 키',
+    GAME_SCORE:'점수',GAME_LIVES:'목숨',GAME_LEVEL:'레벨',GAME_START:'게임 시작',GAME_OVER:'게임 오버',
+    GAME_WIN:'레벨 클리어!',GAME_RESTART:'다시 플레이',GAME_HI:'최고 점수',
+    CTRL_HINT:'← → 또는 A/D : 이동 | 스페이스 또는 클릭 : 사격 | 터치 : 버튼'},
+  ar:{flag:'🇸🇦',code:'AR',name:'العربية',dir:'rtl',
+    STATUS_WAIT:'انتظار',NAV_SCANNER:'ماسح القوائم',NAV_X:'ماسح X',NAV_TOP7:'أفضل 7',
+    NAV_AIRDROPS:'إيردروب',NAV_SWAP:'أفضل تبادل',NAV_SEARCH:'بحث المشاريع',NAV_WALLET:'تحليل العنوان',NAV_GAME:'أركيد',
+    BTN_SCAN:'مسح',BTN_ANALYSE:'تحليل',BTN_SAVE:'حفظ',APIKEY:'مفتاح API',
+    GAME_SCORE:'النقاط',GAME_LIVES:'أرواح',GAME_LEVEL:'المستوى',GAME_START:'ابدأ اللعبة',GAME_OVER:'انتهت اللعبة',
+    GAME_WIN:'اكتمل المستوى!',GAME_RESTART:'العب مجدداً',GAME_HI:'أعلى نقاط',
+    CTRL_HINT:'← → : التحرك | مسافة أو نقر : إطلاق | لمس : الأزرار'},
+  tr:{flag:'🇹🇷',code:'TR',name:'Türkçe',dir:'ltr',
+    STATUS_WAIT:'BEKLENIYOR',NAV_SCANNER:'LİSTELEME TARAYICI',NAV_X:'X TARAYICI',NAV_TOP7:'HAFTANIN TOP7',
+    NAV_AIRDROPS:'AIRDROP\'LAR',NAV_SWAP:'EN İYİ SWAP',NAV_SEARCH:'PROJE ARAŞTIR',NAV_WALLET:'ADRES ANALİZİ',NAV_GAME:'ARCADE',
+    BTN_SCAN:'TARA',BTN_ANALYSE:'ANALİZ ET',BTN_SAVE:'KAYDET',APIKEY:'API ANAHTARI',
+    GAME_SCORE:'PUAN',GAME_LIVES:'CAN',GAME_LEVEL:'SEVİYE',GAME_START:'OYUNA BAŞLA',GAME_OVER:'OYUN BİTTİ',
+    GAME_WIN:'SEVİYE TAMAMLANDI!',GAME_RESTART:'TEKRAR OYNA',GAME_HI:'EN YÜKSEK PUAN',
+    CTRL_HINT:'← → veya A/D : hareket | BOŞLUK veya tık : ateş | Dokunmatik : butonlar'}
+};
+
+var currentLang = localStorage.getItem('cs6_lang') || 'fr';
+
+function t(key) { return (LANGS[currentLang] && LANGS[currentLang][key]) || (LANGS['fr'][key]) || key; }
+
+function applyLang() {
+  var L = LANGS[currentLang] || LANGS['fr'];
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    el.textContent = L[el.dataset.i18n] || el.textContent;
+  });
+  var dir = L.dir || 'ltr';
+  document.documentElement.setAttribute('dir', dir);
+  document.getElementById('langFlag').textContent = L.flag;
+  document.getElementById('langCode').textContent = L.code;
+  var hint = document.getElementById('gHint');
+  if (hint) hint.textContent = L.CTRL_HINT;
+}
+
+function buildLangDrop() {
+  var drop = document.getElementById('langDrop');
+  if (!drop) return;
+  drop.innerHTML = Object.keys(LANGS).map(function(k) {
+    var L = LANGS[k];
+    return '<div class="lang-opt' + (k === currentLang ? ' active' : '') + '" onclick="setLang(\'' + k + '\')">'
+      + L.flag + ' ' + L.name + ' <span style="color:var(--mut);margin-left:auto">' + L.code + '</span></div>';
+  }).join('');
+}
+
+function setLang(code) {
+  currentLang = code;
+  localStorage.setItem('cs6_lang', code);
+  applyLang();
+  buildLangDrop();
+  document.getElementById('langDrop').classList.remove('open');
+}
+
+function toggleLangDrop() {
+  buildLangDrop();
+  document.getElementById('langDrop').classList.toggle('open');
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.lang-wrap')) {
+    var d = document.getElementById('langDrop');
+    if (d) d.classList.remove('open');
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// ── SPACESHIP THEME ────────────────────────────────────
+// ═══════════════════════════════════════════════════════
+var currentTheme = localStorage.getItem('cs6_theme') || 'dark';
+var spaceAnim = null;
+
+function applyTheme(theme) {
+  currentTheme = theme;
+  localStorage.setItem('cs6_theme', theme);
+  document.body.classList.toggle('theme-spaceship', theme === 'spaceship');
+  var btn = document.getElementById('themeBtn');
+  if (btn) btn.textContent = theme === 'spaceship' ? '🌑' : '🚀';
+  if (theme === 'spaceship') startSpaceship();
+  else stopSpaceship();
+}
+
+function toggleTheme() {
+  applyTheme(currentTheme === 'spaceship' ? 'dark' : 'spaceship');
+}
+
+function startSpaceship() {
+  var canvas = document.getElementById('spaceCanvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var W, H, stars = [];
+  var N = 260;
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  stars = [];
+  for (var i = 0; i < N; i++) {
+    stars.push({x: Math.random()*2-1, y: Math.random()*2-1, z: Math.random(), pz: 0});
+  }
+  function frame() {
+    if (currentTheme !== 'spaceship') return;
+    ctx.fillStyle = 'rgba(0,0,8,0.18)';
+    ctx.fillRect(0, 0, W, H);
+    var cx = W / 2, cy = H / 2;
+    for (var i = 0; i < N; i++) {
+      var s = stars[i];
+      s.pz = s.z;
+      s.z -= 0.008;
+      if (s.z <= 0) { s.x = Math.random()*2-1; s.y = Math.random()*2-1; s.z = 1; s.pz = 1; }
+      var sx = s.x / s.z * cx + cx;
+      var sy = s.y / s.z * cy + cy;
+      var px = s.x / s.pz * cx + cx;
+      var py = s.y / s.pz * cy + cy;
+      var bright = Math.floor((1 - s.z) * 255);
+      var size = (1 - s.z) * 2.5;
+      ctx.strokeStyle = 'rgba(' + bright + ',' + Math.floor(bright * 0.7) + ',255,0.9)';
+      ctx.lineWidth = size < 0.4 ? 0.4 : size;
+      ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(sx, sy); ctx.stroke();
+    }
+    spaceAnim = requestAnimationFrame(frame);
+  }
+  if (spaceAnim) cancelAnimationFrame(spaceAnim);
+  frame();
+}
+
+function stopSpaceship() {
+  if (spaceAnim) { cancelAnimationFrame(spaceAnim); spaceAnim = null; }
+  var canvas = document.getElementById('spaceCanvas');
+  if (canvas) { var ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height); }
+}
+
+// ═══════════════════════════════════════════════════════
+// ── CRYPTO INVADERS — GAME ENGINE ──────────────────────
+// ═══════════════════════════════════════════════════════
+var G = {
+  canvas: null, ctx: null, running: false, started: false,
+  W: 700, H: 520,
+  score: 0, hiScore: 0, lives: 3, level: 1,
+  player: {x: 330, y: 460, w: 36, h: 24, spd: 5, bullets: [], lastShot: 0, shieldFlash: 0},
+  enemies: [], eBullets: [], particles: [],
+  eDir: 1, eSpd: 0.6, eDropY: 18, eShootTimer: 0,
+  keys: {left: false, right: false},
+  rafId: null,
+  CRYPTO_SYMBOLS: [
+    {s:'ETH',c:'#627eea',pts:30},{s:'BNB',c:'#f0b90b',pts:30},{s:'SOL',c:'#9945ff',pts:30},
+    {s:'ADA',c:'#0033ad',pts:20},{s:'DOT',c:'#e6007a',pts:20},{s:'LINK',c:'#375bd2',pts:20},
+    {s:'AVAX',c:'#e84142',pts:10},{s:'MATIC',c:'#8247e5',pts:10},{s:'UNI',c:'#ff007a',pts:10},
+    {s:'DOGE',c:'#c2a633',pts:10},{s:'SHIB',c:'#ff5722',pts:10},{s:'XRP',c:'#00aae4',pts:10}
+  ]
+};
+var gKeys = G.keys;
+
+function initGame() {
+  if (G.started) return;
+  G.started = true;
+  G.canvas = document.getElementById('gameCanvas');
+  if (!G.canvas) return;
+  G.W = G.canvas.offsetWidth || 700;
+  G.canvas.width = G.W;
+  G.canvas.height = G.H;
+  G.ctx = G.canvas.getContext('2d');
+  G.hiScore = parseInt(localStorage.getItem('cs6_hiscore') || '0');
+  updateGameUI();
+  showGameMenu();
+
+  G.canvas.addEventListener('click', function() { if (G.running) gFire(); else if (!G.running && G.started) startGameLevel(); });
+  document.addEventListener('keydown', function(e) {
+    if (document.getElementById('page-game').style.display === 'none') return;
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') gKeys.left = true;
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') gKeys.right = true;
+    if (e.key === ' ') { e.preventDefault(); gFire(); }
+  });
+  document.addEventListener('keyup', function(e) {
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') gKeys.left = false;
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') gKeys.right = false;
+  });
+}
+
+function showGameMenu() {
+  G.running = false;
+  var ov = document.getElementById('gameOverlay');
+  if (!ov) return;
+  ov.innerHTML = '<div style="text-align:center;font-family:\'Space Mono\',monospace">'
+    + '<div style="font-size:32px;font-weight:900;background:linear-gradient(135deg,#ffd700,#ff6b00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px">₿ CRYPTO INVADERS</div>'
+    + '<div style="font-size:9px;color:var(--mut);margin-bottom:6px">Détruisez les altcoins avec votre vaisseau Bitcoin !</div>'
+    + '<div style="font-size:9px;color:var(--mut);margin-bottom:16px">' + t('GAME_HI') + ' : ' + G.hiScore + '</div>'
+    + '<button class="game-start-btn" onclick="startGameLevel()">' + t('GAME_START') + '</button>'
+    + '<div style="font-size:8px;color:var(--mut);margin-top:10px">' + t('CTRL_HINT') + '</div>'
+    + '</div>';
+  drawGameBg();
+}
+
+function startGameLevel() {
+  var ov = document.getElementById('gameOverlay');
+  if (ov) ov.innerHTML = '';
+  G.score = G.level === 1 ? 0 : G.score;
+  G.lives = G.level === 1 ? 3 : G.lives;
+  G.enemies = [];
+  G.eBullets = [];
+  G.particles = [];
+  G.player.x = G.W / 2 - 18;
+  G.player.bullets = [];
+  G.eDir = 1;
+  G.eSpd = 0.5 + (G.level - 1) * 0.15;
+  G.eShootTimer = 0;
+  // Build enemy grid: 4 rows × 11 cols
+  var rows = 4, cols = 11;
+  var startX = 30, startY = 60, gapX = (G.W - 60) / cols, gapY = 42;
+  for (var r = 0; r < rows; r++) {
+    for (var c = 0; c < cols; c++) {
+      var sym = G.CRYPTO_SYMBOLS[(r * cols + c) % G.CRYPTO_SYMBOLS.length];
+      G.enemies.push({
+        x: startX + c * gapX, y: startY + r * gapY,
+        w: 38, h: 20, alive: true,
+        s: sym.s, c: sym.c,
+        pts: r < 1 ? 30 : r < 2 ? 20 : 10
+      });
+    }
+  }
+  G.running = true;
+  if (G.rafId) cancelAnimationFrame(G.rafId);
+  gameLoop();
+}
+
+function gFire() {
+  if (!G.running) return;
+  var now = Date.now();
+  if (now - G.player.lastShot < 280) return;
+  G.player.lastShot = now;
+  G.player.bullets.push({x: G.player.x + G.player.w / 2 - 2, y: G.player.y, w: 4, h: 14, spd: 10});
+}
+
+function gameLoop() {
+  if (!G.running) return;
+  updateGame();
+  drawGame();
+  G.rafId = requestAnimationFrame(gameLoop);
+}
+
+function updateGame() {
+  var p = G.player;
+  // Player movement
+  if (gKeys.left && p.x > 4) p.x -= p.spd;
+  if (gKeys.right && p.x < G.W - p.w - 4) p.x += p.spd;
+  // Player bullets
+  p.bullets = p.bullets.filter(function(b) {
+    b.y -= b.spd;
+    return b.y > -20;
+  });
+  // Enemy bullets
+  G.eBullets = G.eBullets.filter(function(b) {
+    b.y += b.spd;
+    return b.y < G.H + 20;
+  });
+  // Enemy movement
+  var alive = G.enemies.filter(function(e) { return e.alive; });
+  if (!alive.length) { gameWin(); return; }
+  var edgeL = Math.min.apply(null, alive.map(function(e){return e.x;}));
+  var edgeR = Math.max.apply(null, alive.map(function(e){return e.x + e.w;}));
+  var didDrop = false;
+  if ((G.eDir > 0 && edgeR >= G.W - 10) || (G.eDir < 0 && edgeL <= 10)) {
+    G.eDir *= -1;
+    G.enemies.forEach(function(e) { if (e.alive) e.y += G.eDropY; });
+    didDrop = true;
+    G.eSpd = Math.min(G.eSpd * 1.05, 4);
+  }
+  if (!didDrop) G.enemies.forEach(function(e) { if (e.alive) e.x += G.eSpd * G.eDir; });
+  // Enemy reach bottom
+  if (alive.some(function(e){return e.y + e.h >= p.y - 10;})) { gameOver(); return; }
+  // Enemy shoot
+  G.eShootTimer++;
+  var shootRate = Math.max(8, 22 - G.level * 2);
+  if (G.eShootTimer > shootRate) {
+    G.eShootTimer = 0;
+    var shooters = alive.filter(function(e) {
+      return !alive.some(function(e2) { return e2.alive && e2 !== e && Math.abs(e2.x - e.x) < 20 && e2.y > e.y; });
+    });
+    if (shooters.length) {
+      var sh = shooters[Math.floor(Math.random() * shooters.length)];
+      G.eBullets.push({x: sh.x + sh.w/2 - 2, y: sh.y + sh.h, w: 4, h: 10, spd: 3 + G.level * 0.3});
+    }
+  }
+  // Bullet-enemy collision
+  p.bullets.forEach(function(b) {
+    G.enemies.forEach(function(e) {
+      if (!e.alive) return;
+      if (b.x < e.x + e.w && b.x + b.w > e.x && b.y < e.y + e.h && b.y + b.h > e.y) {
+        e.alive = false; b.y = -9999;
+        G.score += e.pts; updateGameUI();
+        spawnParticles(e.x + e.w/2, e.y + e.h/2, e.c);
+      }
+    });
+  });
+  // Enemy bullet-player collision
+  G.eBullets.forEach(function(b) {
+    if (b.x < p.x + p.w && b.x + b.w > p.x && b.y < p.y + p.h && b.y + b.h > p.y) {
+      b.y = 9999;
+      G.lives--;
+      p.shieldFlash = 20;
+      spawnParticles(p.x + p.w/2, p.y + p.h/2, '#ff3d5a');
+      updateGameUI();
+      if (G.lives <= 0) { gameOver(); return; }
+    }
+  });
+  // Particles
+  G.particles = G.particles.filter(function(pt) { pt.x += pt.vx; pt.y += pt.vy; pt.life--; pt.vy += 0.08; return pt.life > 0; });
+  if (p.shieldFlash > 0) p.shieldFlash--;
+}
+
+function spawnParticles(x, y, color) {
+  for (var i = 0; i < 8; i++) {
+    var a = (Math.PI * 2 / 8) * i + Math.random() * 0.4;
+    var spd = 1.5 + Math.random() * 2;
+    G.particles.push({x: x, y: y, vx: Math.cos(a)*spd, vy: Math.sin(a)*spd, life: 22, maxLife: 22, c: color});
+  }
+}
+
+function drawGame() {
+  var ctx = G.ctx, W = G.W, H = G.H, p = G.player;
+  ctx.fillStyle = '#000008'; ctx.fillRect(0, 0, W, H);
+  // Stars bg
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  for (var i = 0; i < 40; i++) {
+    var sx = ((i * 137 + G.score) % W);
+    var sy = ((i * 97 + G.score * 0.1) % H);
+    ctx.fillRect(sx, sy, 1, 1);
+  }
+  // Enemies
+  G.enemies.forEach(function(e) {
+    if (!e.alive) return;
+    ctx.save();
+    ctx.shadowColor = e.c; ctx.shadowBlur = 8;
+    ctx.strokeStyle = e.c; ctx.lineWidth = 1.5;
+    ctx.strokeRect(e.x + 2, e.y + 2, e.w - 4, e.h - 4);
+    ctx.fillStyle = e.c + '22'; ctx.fillRect(e.x + 2, e.y + 2, e.w - 4, e.h - 4);
+    ctx.fillStyle = e.c; ctx.font = 'bold 8px Space Mono,monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(e.s, e.x + e.w/2, e.y + e.h/2);
+    ctx.restore();
+  });
+  // Player bullets
+  p.bullets.forEach(function(b) {
+    ctx.save(); ctx.shadowColor = '#3df78e'; ctx.shadowBlur = 10;
+    ctx.fillStyle = '#3df78e'; ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.restore();
+  });
+  // Enemy bullets
+  G.eBullets.forEach(function(b) {
+    ctx.save(); ctx.shadowColor = '#ff3d5a'; ctx.shadowBlur = 8;
+    ctx.fillStyle = '#ff3d5a'; ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.restore();
+  });
+  // Particles
+  G.particles.forEach(function(pt) {
+    ctx.save(); ctx.globalAlpha = pt.life / pt.maxLife;
+    ctx.fillStyle = pt.c; ctx.beginPath();
+    ctx.arc(pt.x, pt.y, 2, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  });
+  // Player ship (Bitcoin)
+  ctx.save();
+  var flash = p.shieldFlash > 0 && (Math.floor(p.shieldFlash/3) % 2 === 0);
+  if (!flash) {
+    ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 14;
+    // Ship body
+    ctx.fillStyle = '#ffd700';
+    ctx.beginPath();
+    ctx.moveTo(p.x + p.w/2, p.y);
+    ctx.lineTo(p.x, p.y + p.h);
+    ctx.lineTo(p.x + p.w, p.y + p.h);
+    ctx.closePath(); ctx.fill();
+    // ₿ symbol
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 12px serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('₿', p.x + p.w/2, p.y + p.h*0.6);
+    // Thruster flame
+    var flicker = 0.7 + Math.random() * 0.3;
+    ctx.fillStyle = 'rgba(255,107,53,' + flicker + ')';
+    ctx.beginPath();
+    ctx.moveTo(p.x + p.w*0.35, p.y + p.h);
+    ctx.lineTo(p.x + p.w*0.5, p.y + p.h + 10 * flicker);
+    ctx.lineTo(p.x + p.w*0.65, p.y + p.h);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawGameBg() {
+  if (!G.ctx) return;
+  var ctx = G.ctx; var W = G.W; var H = G.H;
+  ctx.fillStyle = '#000008'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  for (var i = 0; i < 40; i++) ctx.fillRect((i * 137) % W, (i * 97) % H, 1, 1);
+}
+
+function updateGameUI() {
+  var el = document.getElementById('gScore'); if (el) el.textContent = G.score;
+  var lv = document.getElementById('gLevel'); if (lv) lv.textContent = t('GAME_LEVEL') + ' ' + G.level;
+  var li = document.getElementById('gLives'); if (li) li.textContent = Array(Math.max(0,G.lives)+1).join('₿ ').trim() || '—';
+  var hi = document.getElementById('gHiScore'); if (hi) hi.textContent = t('GAME_HI') + ' : ' + G.hiScore;
+}
+
+function gameOver() {
+  G.running = false; cancelAnimationFrame(G.rafId);
+  if (G.score > G.hiScore) { G.hiScore = G.score; localStorage.setItem('cs6_hiscore', G.hiScore); }
+  var ov = document.getElementById('gameOverlay');
+  if (ov) ov.innerHTML = '<div style="text-align:center;font-family:\'Space Mono\',monospace">'
+    + '<div style="font-size:26px;font-weight:900;color:var(--dng);margin-bottom:8px">' + t('GAME_OVER') + '</div>'
+    + '<div style="font-size:13px;color:var(--acc);margin-bottom:4px">' + t('GAME_SCORE') + ' : ' + G.score + '</div>'
+    + '<div style="font-size:9px;color:var(--mut);margin-bottom:16px">' + t('GAME_HI') + ' : ' + G.hiScore + '</div>'
+    + '<button class="game-start-btn" onclick="G.level=1;G.lives=3;G.score=0;startGameLevel()">' + t('GAME_RESTART') + '</button>'
+    + '</div>';
+  updateGameUI();
+}
+
+function gameWin() {
+  G.running = false; cancelAnimationFrame(G.rafId);
+  if (G.score > G.hiScore) { G.hiScore = G.score; localStorage.setItem('cs6_hiscore', G.hiScore); }
+  var ov = document.getElementById('gameOverlay');
+  G.level++;
+  if (ov) ov.innerHTML = '<div style="text-align:center;font-family:\'Space Mono\',monospace">'
+    + '<div style="font-size:22px;font-weight:900;color:var(--acc);margin-bottom:8px">' + t('GAME_WIN') + '</div>'
+    + '<div style="font-size:13px;color:#ffd700;margin-bottom:4px">' + t('GAME_SCORE') + ' : ' + G.score + '</div>'
+    + '<div style="font-size:9px;color:var(--mut);margin-bottom:16px">' + t('GAME_LEVEL') + ' : ' + G.level + '</div>'
+    + '<button class="game-start-btn" onclick="startGameLevel()">' + t('GAME_LEVEL') + ' ' + G.level + ' ▶</button>'
+    + '</div>';
+  updateGameUI();
+}
+
+// ── INIT LANG + THEME ──
+(function() {
+  applyLang();
+  applyTheme(currentTheme);
+})();
 </script>
 </body>
 </html>
