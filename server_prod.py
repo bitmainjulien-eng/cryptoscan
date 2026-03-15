@@ -1,26 +1,42 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-CryptoScan — Serveur Production v1.0
-Pour déploiement cloud (Railway, Render, Fly.io, VPS, etc.)
+CryptoScan — Serveur Production v2.0
+Système de jobs asynchrones pour éviter les timeouts Railway
 """
 
 import http.server
 import socketserver
 import urllib.request
 import urllib.error
-import json, os, sys, threading, socket, time, traceback
+import json, os, sys, threading, socket, time, traceback, uuid
 
 # ── CONFIGURATION ─────────────────────────────────────────────────────────────
 PORT     = int(os.environ.get("PORT", 8080))
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# La clé API vient UNIQUEMENT de la variable d'environnement (pas de fichier local en prod)
-# Ou du header x-api-key envoyé par le client (clé saisie dans l'interface)
 ENV_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 
 # Sémaphore : max N requêtes Anthropic simultanées
 _api_lock = threading.Semaphore(int(os.environ.get("MAX_CONCURRENT", 5)))
+
+# ── JOB QUEUE ─────────────────────────────────────────────────────────────────
+# Format: { job_id: { "status": "pending"|"running"|"done"|"error",
+#                      "result": bytes|None, "http_status": int,
+#                      "created": float } }
+_jobs = {}
+_jobs_lock = threading.Lock()
+
+def _cleanup_old_jobs():
+    """Supprime les jobs de plus de 10 minutes."""
+    while True:
+        time.sleep(60)
+        now = time.time()
+        with _jobs_lock:
+            old = [jid for jid, j in _jobs.items() if now - j["created"] > 600]
+            for jid in old:
+                del _jobs[jid]
+
+threading.Thread(target=_cleanup_old_jobs, daemon=True).start()
 
 # ── FICHIER HTML ───────────────────────────────────────────────────────────────
 def find_html():
@@ -33,7 +49,6 @@ def find_html():
     return None
 
 HTML_FILE = find_html() or "cryptoscan.html"
-
 
 # ── SERVEUR MULTI-THREAD ───────────────────────────────────────────────────────
 class ThreadingTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
@@ -48,7 +63,7 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
         print(f"  [{ts}] {fmt % args}", flush=True)
 
     def log_error(self, fmt, *args):
-        pass  # Suppress noisy default errors
+        pass
 
     # ── ROUTING ───────────────────────────────────────────────────────────────
     def do_OPTIONS(self):
@@ -62,6 +77,9 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
             self._serve_html()
         elif path == "/api/config":
             self._serve_config()
+        elif path.startswith("/api/job/"):
+            job_id = path[len("/api/job/"):]
+            self._get_job(job_id)
         elif path == "/ping":
             self._ok(b"pong")
         elif path == "/health":
@@ -106,13 +124,8 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
         }).encode()
         self._ok(body, "application/json")
 
-    # ── SAVE KEY (session only — no file storage in prod) ─────────────────────
+    # ── SAVE KEY ──────────────────────────────────────────────────────────────
     def _save_key(self):
-        """
-        En production, on ne sauvegarde pas la clé dans un fichier.
-        La clé est mémorisée par le client (localStorage dans le navigateur).
-        Ce endpoint valide juste le format.
-        """
         try:
             length = int(self.headers.get("Content-Length", 0))
             body   = json.loads(self.rfile.read(length))
@@ -125,39 +138,98 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
         except Exception as e:
             self._json_error(500, str(e))
 
-    # ── PROXY ANTHROPIC ───────────────────────────────────────────────────────
+    # ── PROXY ANTHROPIC (ASYNC JOB) ───────────────────────────────────────────
     def _proxy(self):
+        """
+        Retourne immédiatement un job_id, puis traite la requête en arrière-plan.
+        Le client poll GET /api/job/{job_id} toutes les 2s pour récupérer le résultat.
+        """
         try:
             length = int(self.headers.get("Content-Length", 0))
-            if length > 512 * 1024:  # 512 KB max
-                self._json_error(413, "Payload trop volumineux (max 512 KB)")
+            if length > 1024 * 1024:  # 1 MB max
+                self._json_error(413, "Payload trop volumineux (max 1 MB)")
                 return
             payload = self.rfile.read(length)
 
-            # Priorité : header x-api-key > variable d'environnement
             api_key = self.headers.get("x-api-key", "").strip()
             if not api_key.startswith("sk-ant-"):
                 api_key = ENV_API_KEY
 
             if not api_key:
-                self._json_error(401, "Clé API manquante. Entrez-la dans l'application.")
+                self._json_error(401, "Clé API manquante.")
                 return
 
-            _api_lock.acquire()
-            try:
-                status, data = self._call_anthropic_with_retry(payload, api_key)
-            finally:
-                _api_lock.release()
+            # Créer le job
+            job_id = str(uuid.uuid4())
+            with _jobs_lock:
+                _jobs[job_id] = {
+                    "status":      "pending",
+                    "result":      None,
+                    "http_status": 200,
+                    "created":     time.time()
+                }
 
-            self._send_cors_headers(status)
-            self.send_header("Content-Type",   "application/json")
-            self.send_header("Content-Length", str(len(data)))
-            self.end_headers()
-            self.wfile.write(data)
+            # Lancer en arrière-plan
+            t = threading.Thread(
+                target=self._run_job,
+                args=(job_id, payload, api_key),
+                daemon=True
+            )
+            t.start()
+
+            # Répondre immédiatement avec le job_id
+            resp = json.dumps({"job_id": job_id}).encode()
+            self._ok(resp, "application/json")
 
         except Exception as e:
             traceback.print_exc()
             self._json_error(500, str(e))
+
+    def _run_job(self, job_id, payload, api_key):
+        """Exécute l'appel Anthropic dans un thread séparé."""
+        with _jobs_lock:
+            _jobs[job_id]["status"] = "running"
+
+        _api_lock.acquire()
+        try:
+            status, data = self._call_anthropic_with_retry(payload, api_key)
+            with _jobs_lock:
+                _jobs[job_id]["status"]      = "done"
+                _jobs[job_id]["result"]      = data
+                _jobs[job_id]["http_status"] = status
+        except Exception as e:
+            err = json.dumps({"error": {"message": str(e)}}).encode()
+            with _jobs_lock:
+                _jobs[job_id]["status"]      = "error"
+                _jobs[job_id]["result"]      = err
+                _jobs[job_id]["http_status"] = 500
+        finally:
+            _api_lock.release()
+
+    def _get_job(self, job_id):
+        """Retourne l'état du job."""
+        with _jobs_lock:
+            job = _jobs.get(job_id)
+
+        if job is None:
+            self._json_error(404, "Job introuvable")
+            return
+
+        if job["status"] in ("pending", "running"):
+            resp = json.dumps({"status": job["status"]}).encode()
+            self._ok(resp, "application/json")
+            return
+
+        # done ou error — retourner le résultat brut d'Anthropic
+        self._send_cors_headers(job["http_status"])
+        self.send_header("Content-Type",   "application/json")
+        self.send_header("Content-Length", str(len(job["result"])))
+        self.end_headers()
+        self.wfile.write(job["result"])
+
+        # Nettoyer le job immédiatement après livraison
+        with _jobs_lock:
+            _jobs.pop(job_id, None)
 
     def _call_anthropic_with_retry(self, payload, api_key, max_retries=8):
         wait = 5
@@ -172,11 +244,10 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
             req.add_header("anthropic-beta",    "web-search-2025-03-05")
 
             try:
-                with urllib.request.urlopen(req, timeout=120) as r:
+                with urllib.request.urlopen(req, timeout=180) as r:
                     return r.status, r.read()
             except urllib.error.HTTPError as e:
                 if e.code == 429:
-                    err_body = e.read()
                     retry_after = (e.headers.get("retry-after") or
                                    e.headers.get("x-ratelimit-reset-requests"))
                     if retry_after:
@@ -191,8 +262,16 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
                     continue
                 else:
                     return e.code, e.read()
+            except Exception as e:
+                ts = time.strftime("%H:%M:%S")
+                print(f"  [{ts}] Erreur réseau : {e}", flush=True)
+                if attempt < max_retries - 1:
+                    time.sleep(wait)
+                    wait = min(wait * 2, 60)
+                    continue
+                raise
 
-        msg = json.dumps({"error": {"message": f"Rate limit persistant après {max_retries} tentatives."}}).encode()
+        msg = json.dumps({"error": {"message": f"Échec après {max_retries} tentatives."}}).encode()
         return 429, msg
 
     # ── HELPERS ───────────────────────────────────────────────────────────────
@@ -202,7 +281,6 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers",
                          "Content-Type, x-api-key, anthropic-version, anthropic-beta")
-        # Security headers
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options",        "SAMEORIGIN")
         self.send_header("Referrer-Policy",        "no-referrer")
@@ -229,10 +307,10 @@ def main():
         print(f"[ERREUR] Fichier HTML introuvable : {HTML_FILE}", flush=True)
         sys.exit(1)
 
-    print(f"[OK] CryptoScan Production", flush=True)
+    print(f"[OK] CryptoScan Production v2.0 (jobs asynchrones)", flush=True)
     print(f"[OK] HTML : {HTML_FILE}", flush=True)
     print(f"[OK] Port : {PORT}", flush=True)
-    print(f"[OK] Clé API env : {'présente' if ENV_API_KEY else 'absente (les clients fourniront la leur)'}", flush=True)
+    print(f"[OK] Clé API env : {'présente' if ENV_API_KEY else 'absente'}", flush=True)
 
     server = ThreadingTCPServer(("0.0.0.0", PORT), CryptoHandler)
     print(f"[OK] Serveur démarré sur 0.0.0.0:{PORT}", flush=True)

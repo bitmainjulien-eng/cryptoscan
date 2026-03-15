@@ -1225,14 +1225,48 @@ function callAPI(messages, useWebSearch, maxTokens) {
   var headers = {'Content-Type': 'application/json'};
   var key = getKey();
   if (key) headers['x-api-key'] = key;
+
+  // 1) POST → reçoit un job_id immédiatement
   return fetch(API_BASE + '/api/anthropic', {method: 'POST', headers: headers, body: JSON.stringify(body)})
     .then(function(r) {
       if (!r.ok) return r.json().then(function(e) { throw new Error('API ' + r.status + ' — ' + (e.error && e.error.message ? e.error.message : r.statusText)); });
       return r.json();
     })
-    .then(function(d) {
-      return (d.content || []).filter(function(b) { return b.type === 'text'; }).map(function(b) { return b.text; }).join('');
+    .then(function(resp) {
+      // Ancien serveur local : réponse directe Anthropic (contient "content")
+      if (resp.content) {
+        return (resp.content || []).filter(function(b) { return b.type === 'text'; }).map(function(b) { return b.text; }).join('');
+      }
+      // Nouveau serveur prod : réponse avec job_id → polling
+      if (!resp.job_id) throw new Error('Réponse serveur invalide');
+      return _pollJob(resp.job_id, headers);
     });
+}
+
+function _pollJob(jobId, headers) {
+  return new Promise(function(resolve, reject) {
+    var maxAttempts = 180; // 6 minutes max (2s × 180)
+    var attempt = 0;
+    function poll() {
+      attempt++;
+      if (attempt > maxAttempts) { reject(new Error('Timeout : scan trop long')); return; }
+      fetch(API_BASE + '/api/job/' + jobId, {headers: {'x-api-key': (headers && headers['x-api-key']) || ''}})
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (d.status === 'pending' || d.status === 'running') {
+            setTimeout(poll, 2000);
+          } else if (d.error) {
+            reject(new Error(d.error.message || 'Erreur API'));
+          } else {
+            // Résultat final Anthropic
+            var text = (d.content || []).filter(function(b) { return b.type === 'text'; }).map(function(b) { return b.text; }).join('');
+            resolve(text);
+          }
+        })
+        .catch(function(e) { reject(e); });
+    }
+    setTimeout(poll, 2000);
+  });
 }
 
 // ═══ JSON EXTRACTOR ═══
