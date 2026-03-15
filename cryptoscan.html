@@ -256,12 +256,22 @@ body.theme-spaceship .fm-overlay,body.theme-spaceship .modal-overlay{backdrop-fi
 .app{position:relative;z-index:1}
 /* ── GAME PAGE ── */
 .game-wrap{display:flex;flex-direction:column;align-items:center;padding:20px 10px;min-height:100vh;background:transparent}
-.game-hdr{width:100%;max-width:700px;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-family:'Space Mono',monospace}
+.game-hdr{width:100%;max-width:980px;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-family:'Space Mono',monospace}
 .game-score-lbl{font-size:9px;color:var(--mut);margin-bottom:2px}
 .game-score-val{font-size:18px;font-weight:700;color:var(--acc)}
 .game-lives{display:flex;gap:4px;font-size:16px}
 .game-level-pill{font-size:9px;padding:3px 10px;border:1px solid var(--acc2);color:var(--acc2);background:var(--acc2d)}
-#gameCanvas{border:1px solid var(--bdr2);background:#000008;max-width:700px;width:100%;touch-action:none;cursor:crosshair}
+#gameCanvas{border:1px solid var(--bdr2);background:#000008;max-width:980px;width:100%;touch-action:none;cursor:crosshair}
+/* ── SINGULARITY OVERLAY ── */
+#singularityOv{display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:999999;background:#000}
+#singularityCanvas{position:absolute;top:0;left:0;width:100%;height:100%}
+#singularityText{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;font-family:'Space Mono',monospace;color:#fff;pointer-events:none;z-index:2;width:80%}
+.sing-msg{font-size:clamp(14px,2.5vw,22px);letter-spacing:3px;color:#e066ff;text-shadow:0 0 20px #e066ff,0 0 40px #a020f0;margin-bottom:16px;min-height:1.6em}
+.sing-sub{font-size:11px;color:rgba(200,150,255,.6);letter-spacing:2px}
+#singularityCounter{display:none;position:fixed;bottom:14px;left:50%;transform:translateX(-50%);font-family:'Space Mono',monospace;font-size:10px;color:rgba(180,100,255,.6);letter-spacing:2px;z-index:9999;border:1px solid rgba(180,100,255,.2);padding:5px 16px;background:rgba(0,0,0,.6);pointer-events:none}
+/* ── WORMHOLE ── */
+.app-wormhole-exit{transition:transform .8s cubic-bezier(.55,.05,.67,.19),opacity .8s;transform:scale(0) rotate(720deg)!important;opacity:0!important;transform-origin:center center}
+.app-wormhole-enter{transition:transform .6s cubic-bezier(.17,.67,.39,1.21),opacity .6s;transform:scale(1) rotate(0deg)!important;opacity:1!important}
 .game-ctrl-hint{font-size:8px;color:var(--mut);margin-top:8px;text-align:center;font-family:'Space Mono',monospace}
 .game-menu{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;z-index:10}
 .game-title{font-family:'Syne',sans-serif;font-size:28px;font-weight:900;background:linear-gradient(135deg,#ffd700,#ff6b00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
@@ -729,6 +739,16 @@ body.theme-spaceship .fm-overlay,body.theme-spaceship .modal-overlay{backdrop-fi
 
 <!-- TOPBAR -->
 <canvas id="spaceCanvas"></canvas>
+<!-- SINGULARITY OVERLAY -->
+<div id="singularityOv">
+  <canvas id="singularityCanvas"></canvas>
+  <div id="singularityText">
+    <div class="sing-msg" id="singMsg"></div>
+    <div class="sing-sub" id="singSubMsg"></div>
+  </div>
+</div>
+<!-- SINGULARITY COUNTER -->
+<div id="singularityCounter">⬡ SINGULARITÉ ACTIVÉE <span id="singCount">0</span> FOIS</div>
 <div class="topbar">
   <div style="display:flex;align-items:center">
     <span class="logo-c">CRYPTO</span><span class="logo-s">SCAN</span>
@@ -1044,8 +1064,8 @@ body.theme-spaceship .fm-overlay,body.theme-spaceship .modal-overlay{backdrop-fi
         <div class="game-lives" id="gLives">₿ ₿ ₿</div>
       </div>
     </div>
-    <div style="position:relative;width:100%;max-width:700px">
-      <canvas id="gameCanvas" height="520"></canvas>
+    <div style="position:relative;width:100%;max-width:980px">
+      <canvas id="gameCanvas" height="680"></canvas>
       <div id="gameOverlay" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px"></div>
     </div>
     <div class="game-ctrl-hint" id="gHint">← → ou A/D : déplacer &nbsp;|&nbsp; ESPACE ou clic : tirer &nbsp;|&nbsp; Tactile : boutons ci-dessous</div>
@@ -3349,13 +3369,19 @@ function applyTheme(theme) {
   localStorage.setItem('cs6_theme', theme);
   document.body.classList.toggle('theme-spaceship', theme === 'spaceship');
   var btn = document.getElementById('themeBtn');
-  if (btn) btn.textContent = theme === 'spaceship' ? '🌑' : '🚀';
+  if (btn) {
+    if (theme === 'spaceship') btn.textContent = '🌀';
+    else if (theme === 'wormhole') btn.textContent = '🌑';
+    else btn.textContent = '🚀';
+  }
   if (theme === 'spaceship') startSpaceship();
   else stopSpaceship();
+  if (theme === 'wormhole') activateWormhole();
 }
 
 function toggleTheme() {
-  applyTheme(currentTheme === 'spaceship' ? 'dark' : 'spaceship');
+  var next = currentTheme === 'dark' ? 'spaceship' : currentTheme === 'spaceship' ? 'wormhole' : 'dark';
+  applyTheme(next);
 }
 
 function startSpaceship() {
@@ -3407,22 +3433,188 @@ function stopSpaceship() {
 }
 
 // ═══════════════════════════════════════════════════════
+// ── SINGULARITY & WORMHOLE ──────────────────────────────
+// ═══════════════════════════════════════════════════════
+
+var _singRafId = null;
+var _singularityCount = parseInt(localStorage.getItem('cs6_singularity') || '0');
+
+function _beep(freq, dur, vol) {
+  try {
+    var ac = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ac.createOscillator();
+    var gain = ac.createGain();
+    osc.connect(gain); gain.connect(ac.destination);
+    osc.frequency.value = freq || 880;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(vol || 0.12, ac.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + (dur || 0.08));
+    osc.start(ac.currentTime); osc.stop(ac.currentTime + (dur || 0.08));
+  } catch(e) {}
+}
+
+function _typewriter(el, text, speed, onDone) {
+  el.textContent = '';
+  var i = 0;
+  function tick() {
+    if (i >= text.length) { if (onDone) onDone(); return; }
+    el.textContent += text[i]; i++;
+    _beep(600 + Math.random() * 400, 0.05, 0.08);
+    setTimeout(tick, speed || 60);
+  }
+  tick();
+}
+
+function triggerSingularityEffect(message, onComplete) {
+  var ov = document.getElementById('singularityOv');
+  var app = document.querySelector('.app');
+  var sc = document.getElementById('singularityCanvas');
+  var msgEl = document.getElementById('singMsg');
+  var subEl = document.getElementById('singSubMsg');
+  if (!ov || !sc) { if (onComplete) onComplete(); return; }
+
+  // Step 1: collapse the site
+  if (app) { app.style.transition = 'transform 1s cubic-bezier(.55,.05,.67,.19),opacity 1s'; app.style.transformOrigin = 'center center'; app.style.transform = 'scale(0) rotate(900deg)'; app.style.opacity = '0'; }
+
+  setTimeout(function() {
+    ov.style.display = 'block';
+    sc.width = window.innerWidth; sc.height = window.innerHeight;
+    var ctx = sc.getContext('2d');
+    var W = sc.width, H = sc.height, cx = W/2, cy = H/2;
+    var t = 0;
+    var particles = [];
+    for (var i = 0; i < 200; i++) {
+      var angle = Math.random() * Math.PI * 2;
+      var dist = 120 + Math.random() * Math.max(W, H) * 0.45;
+      particles.push({ angle: angle, dist: dist, speed: 0.01 + Math.random() * 0.03, size: 0.5 + Math.random() * 2.5, hue: 260 + Math.random() * 60 });
+    }
+    msgEl.textContent = ''; subEl.textContent = '';
+
+    function drawBH() {
+      t++;
+      ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(0, 0, W, H);
+      // Accretion disk (outer glow rings)
+      for (var ri = 5; ri >= 1; ri--) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, 60 + ri * 18, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(' + (180 + ri*10) + ',' + (ri*15) + ',' + (220 + ri*5) + ',' + (0.06 + ri*0.03) + ')';
+        ctx.lineWidth = ri * 3;
+        ctx.stroke();
+      }
+      // Rotating accretion disk line
+      for (var ai = 0; ai < 3; ai++) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(t * 0.04 + ai * Math.PI * 0.66);
+        var grad = ctx.createLinearGradient(-150, 0, 150, 0);
+        grad.addColorStop(0, 'rgba(255,100,255,0)');
+        grad.addColorStop(0.4, 'rgba(200,80,255,0.5)');
+        grad.addColorStop(0.5, 'rgba(255,200,255,0.8)');
+        grad.addColorStop(0.6, 'rgba(200,80,255,0.5)');
+        grad.addColorStop(1, 'rgba(255,100,255,0)');
+        ctx.strokeStyle = grad; ctx.lineWidth = 6 + Math.sin(t*0.1)*3;
+        ctx.beginPath(); ctx.moveTo(-150, 0); ctx.lineTo(150, 0); ctx.stroke();
+        ctx.restore();
+      }
+      // Particles spiraling inward
+      particles.forEach(function(p) {
+        p.angle += p.speed * (1 + (300 - p.dist) * 0.008);
+        p.dist = Math.max(0, p.dist - (0.4 + (300 - p.dist) * 0.01));
+        if (p.dist < 30) { var a2 = Math.random()*Math.PI*2; p.dist = 150 + Math.random()*200; p.angle = a2; }
+        var px = cx + Math.cos(p.angle) * p.dist;
+        var py = cy + Math.sin(p.angle) * p.dist * 0.45;
+        ctx.beginPath(); ctx.arc(px, py, p.size, 0, Math.PI*2);
+        ctx.fillStyle = 'hsla(' + p.hue + ',100%,' + (60 + p.dist/5) + '%,' + Math.min(1, 0.3 + (200-p.dist)/200) + ')';
+        ctx.fill();
+      });
+      // Event horizon (pure black core)
+      var coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 55);
+      coreGrad.addColorStop(0, 'rgba(0,0,0,1)');
+      coreGrad.addColorStop(0.7, 'rgba(0,0,0,1)');
+      coreGrad.addColorStop(1, 'rgba(20,0,40,0)');
+      ctx.fillStyle = coreGrad; ctx.beginPath(); ctx.arc(cx, cy, 55, 0, Math.PI*2); ctx.fill();
+      // Lens flare
+      var flare = ctx.createRadialGradient(cx, cy, 50, cx, cy, 80);
+      flare.addColorStop(0, 'rgba(255,255,255,0)');
+      flare.addColorStop(0.5, 'rgba(200,100,255,0.08)');
+      flare.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = flare; ctx.beginPath(); ctx.arc(cx, cy, 80, 0, Math.PI*2); ctx.fill();
+      _singRafId = requestAnimationFrame(drawBH);
+    }
+    drawBH();
+
+    // Typewriter starts at 1.5s
+    setTimeout(function() {
+      _typewriter(msgEl, message, 75, function() {
+        setTimeout(function() {
+          _typewriter(subEl, '— NIVEAU SINGULAIRE —', 55);
+        }, 400);
+      });
+    }, 1500);
+
+    // After 9s: site reappears
+    setTimeout(function() {
+      if (_singRafId) { cancelAnimationFrame(_singRafId); _singRafId = null; }
+      ov.style.display = 'none';
+      ctx.clearRect(0, 0, W, H);
+      if (app) {
+        app.style.transition = 'transform .7s cubic-bezier(.17,.67,.39,1.21),opacity .7s';
+        app.style.transform = 'scale(1) rotate(0deg)';
+        app.style.opacity = '1';
+        setTimeout(function() { app.style.transition = ''; app.style.transform = ''; app.style.opacity = ''; }, 800);
+      }
+      if (onComplete) onComplete();
+    }, 9500);
+  }, 1100);
+}
+
+function activateWormhole() {
+  _singularityCount++;
+  localStorage.setItem('cs6_singularity', _singularityCount);
+  var counter = document.getElementById('singularityCounter');
+  var countEl = document.getElementById('singCount');
+  if (countEl) countEl.textContent = _singularityCount;
+
+  triggerSingularityEffect('SINGULARITÉ ACTIVE', function() {
+    // After animation: revert to dark theme (wormhole is one-shot)
+    currentTheme = 'dark';
+    localStorage.setItem('cs6_theme', 'dark');
+    var btn = document.getElementById('themeBtn');
+    if (btn) btn.textContent = '🚀';
+    // Show counter
+    if (counter) {
+      counter.style.display = 'block';
+      setTimeout(function() { counter.style.display = 'none'; }, 8000);
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════
 // ── CRYPTO INVADERS — GAME ENGINE ──────────────────────
 // ═══════════════════════════════════════════════════════
 var G = {
   canvas: null, ctx: null, running: false, started: false,
-  W: 700, H: 520,
+  W: 980, H: 680,
   score: 0, hiScore: 0, lives: 3, level: 1,
-  player: {x: 330, y: 460, w: 36, h: 24, spd: 5, bullets: [], lastShot: 0, shieldFlash: 0},
+  player: {x: 470, y: 630, w: 44, h: 30, spd: 6, bullets: [], lastShot: 0, shieldFlash: 0},
   enemies: [], eBullets: [], particles: [],
-  eDir: 1, eSpd: 0.6, eDropY: 18, eShootTimer: 0,
+  eDir: 1, eSpd: 0.6, eDropY: 20, eShootTimer: 0,
   keys: {left: false, right: false},
   rafId: null,
+  // logo: emoji/symbol shown inside the coin icon
   CRYPTO_SYMBOLS: [
-    {s:'ETH',c:'#627eea',pts:30},{s:'BNB',c:'#f0b90b',pts:30},{s:'SOL',c:'#9945ff',pts:30},
-    {s:'ADA',c:'#0033ad',pts:20},{s:'DOT',c:'#e6007a',pts:20},{s:'LINK',c:'#375bd2',pts:20},
-    {s:'AVAX',c:'#e84142',pts:10},{s:'MATIC',c:'#8247e5',pts:10},{s:'UNI',c:'#ff007a',pts:10},
-    {s:'DOGE',c:'#c2a633',pts:10},{s:'SHIB',c:'#ff5722',pts:10},{s:'XRP',c:'#00aae4',pts:10}
+    {s:'ETH',  logo:'Ξ',  c:'#627eea', pts:30},
+    {s:'BNB',  logo:'B',  c:'#f0b90b', pts:30},
+    {s:'SOL',  logo:'◎',  c:'#9945ff', pts:30},
+    {s:'ADA',  logo:'₳',  c:'#2da0e4', pts:20},
+    {s:'DOT',  logo:'●',  c:'#e6007a', pts:20},
+    {s:'LINK', logo:'⬡',  c:'#375bd2', pts:20},
+    {s:'AVAX', logo:'△',  c:'#e84142', pts:10},
+    {s:'MATIC',logo:'M',  c:'#8247e5', pts:10},
+    {s:'UNI',  logo:'🦄', c:'#ff007a', pts:10},
+    {s:'DOGE', logo:'Ð',  c:'#c2a633', pts:10},
+    {s:'SHIB', logo:'🐕', c:'#ff5722', pts:10},
+    {s:'XRP',  logo:'✕',  c:'#00aae4', pts:10}
   ]
 };
 var gKeys = G.keys;
@@ -3432,7 +3624,8 @@ function initGame() {
   G.started = true;
   G.canvas = document.getElementById('gameCanvas');
   if (!G.canvas) return;
-  G.W = G.canvas.offsetWidth || 700;
+  G.W = G.canvas.offsetWidth || 980;
+  G.H = 680;
   G.canvas.width = G.W;
   G.canvas.height = G.H;
   G.ctx = G.canvas.getContext('2d');
@@ -3475,21 +3668,24 @@ function startGameLevel() {
   G.enemies = [];
   G.eBullets = [];
   G.particles = [];
-  G.player.x = G.W / 2 - 18;
+  G.player.x = G.W / 2 - 22;
+  G.player.y = G.H - 50;
   G.player.bullets = [];
   G.eDir = 1;
   G.eSpd = 0.5 + (G.level - 1) * 0.15;
   G.eShootTimer = 0;
   // Build enemy grid: 4 rows × 11 cols
   var rows = 4, cols = 11;
-  var startX = 30, startY = 60, gapX = (G.W - 60) / cols, gapY = 42;
+  var eW = 52, eH = 48;
+  var totalW = cols * eW + (cols - 1) * 16;
+  var startX = (G.W - totalW) / 2, startY = 60, gapX = eW + 16, gapY = 60;
   for (var r = 0; r < rows; r++) {
     for (var c = 0; c < cols; c++) {
       var sym = G.CRYPTO_SYMBOLS[(r * cols + c) % G.CRYPTO_SYMBOLS.length];
       G.enemies.push({
         x: startX + c * gapX, y: startY + r * gapY,
-        w: 38, h: 20, alive: true,
-        s: sym.s, c: sym.c,
+        w: eW, h: eH, alive: true,
+        s: sym.s, logo: sym.logo, c: sym.c,
         pts: r < 1 ? 30 : r < 2 ? 20 : 10
       });
     }
@@ -3597,22 +3793,41 @@ function drawGame() {
   ctx.fillStyle = '#000008'; ctx.fillRect(0, 0, W, H);
   // Stars bg
   ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  for (var i = 0; i < 40; i++) {
+  for (var i = 0; i < 80; i++) {
     var sx = ((i * 137 + G.score) % W);
     var sy = ((i * 97 + G.score * 0.1) % H);
-    ctx.fillRect(sx, sy, 1, 1);
+    ctx.fillRect(sx, sy, i % 3 === 0 ? 2 : 1, i % 3 === 0 ? 2 : 1);
   }
-  // Enemies
+  // Enemies — crypto coin icons
   G.enemies.forEach(function(e) {
     if (!e.alive) return;
+    var cx2 = e.x + e.w/2, cy2 = e.y + e.h/2, r = e.w * 0.44;
     ctx.save();
-    ctx.shadowColor = e.c; ctx.shadowBlur = 8;
-    ctx.strokeStyle = e.c; ctx.lineWidth = 1.5;
-    ctx.strokeRect(e.x + 2, e.y + 2, e.w - 4, e.h - 4);
-    ctx.fillStyle = e.c + '22'; ctx.fillRect(e.x + 2, e.y + 2, e.w - 4, e.h - 4);
-    ctx.fillStyle = e.c; ctx.font = 'bold 8px Space Mono,monospace';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(e.s, e.x + e.w/2, e.y + e.h/2);
+    ctx.shadowColor = e.c; ctx.shadowBlur = 14;
+    // Outer glow ring
+    var outerGrad = ctx.createRadialGradient(cx2, cy2, r*0.7, cx2, cy2, r*1.1);
+    outerGrad.addColorStop(0, e.c + '55'); outerGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = outerGrad; ctx.beginPath(); ctx.arc(cx2, cy2, r*1.1, 0, Math.PI*2); ctx.fill();
+    // Coin body gradient
+    var coinGrad = ctx.createRadialGradient(cx2 - r*0.2, cy2 - r*0.2, 0, cx2, cy2, r);
+    coinGrad.addColorStop(0, e.c + 'cc');
+    coinGrad.addColorStop(0.6, e.c + '88');
+    coinGrad.addColorStop(1, e.c + '33');
+    ctx.fillStyle = coinGrad; ctx.beginPath(); ctx.arc(cx2, cy2, r, 0, Math.PI*2); ctx.fill();
+    // Coin border ring
+    ctx.strokeStyle = e.c; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx2, cy2, r, 0, Math.PI*2); ctx.stroke();
+    // Inner logo
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    // Try logo emoji first, then ticker
+    var logoFont = /[\u{1F000}-\u{1FFFF}]/u.test(e.logo) ? (r*0.9 + 'px serif') : ('bold ' + Math.round(r*0.82) + 'px Space Mono,monospace');
+    ctx.font = logoFont;
+    ctx.fillText(e.logo, cx2, cy2 - r*0.1);
+    // Ticker below
+    ctx.font = 'bold ' + Math.round(r*0.3) + 'px Space Mono,monospace';
+    ctx.fillStyle = e.c;
+    ctx.fillText(e.s, cx2, cy2 + r*0.62);
     ctx.restore();
   });
   // Player bullets
@@ -3694,6 +3909,25 @@ function gameOver() {
 function gameWin() {
   G.running = false; cancelAnimationFrame(G.rafId);
   if (G.score > G.hiScore) { G.hiScore = G.score; localStorage.setItem('cs6_hiscore', G.hiScore); }
+
+  // LEVEL 1 WIN → SINGULARITY !
+  if (G.level === 1) {
+    var ov2 = document.getElementById('gameOverlay');
+    if (ov2) ov2.innerHTML = '';
+    G.level++;
+    triggerSingularityEffect('LA SINGULARITÉ QUANTIQUE A ÉTÉ ATTEINTE', function() {
+      // After singularity: show the normal level 2 screen
+      var ov3 = document.getElementById('gameOverlay');
+      if (ov3) ov3.innerHTML = '<div style="text-align:center;font-family:\'Space Mono\',monospace">'
+        + '<div style="font-size:18px;font-weight:900;color:#e066ff;margin-bottom:8px;text-shadow:0 0 20px #e066ff">⬡ NIVEAU 2 — SINGULAIRE ⬡</div>'
+        + '<div style="font-size:13px;color:#ffd700;margin-bottom:4px">' + t('GAME_SCORE') + ' : ' + G.score + '</div>'
+        + '<button class="game-start-btn" onclick="startGameLevel()" style="background:linear-gradient(135deg,#a020f0,#e066ff)">' + t('GAME_LEVEL') + ' 2 ▶</button>'
+        + '</div>';
+      updateGameUI();
+    });
+    return;
+  }
+
   var ov = document.getElementById('gameOverlay');
   G.level++;
   if (ov) ov.innerHTML = '<div style="text-align:center;font-family:\'Space Mono\',monospace">'
@@ -3709,6 +3943,9 @@ function gameWin() {
 (function() {
   applyLang();
   applyTheme(currentTheme);
+  // Init singularity count display
+  var countEl = document.getElementById('singCount');
+  if (countEl) countEl.textContent = _singularityCount;
 })();
 </script>
 </body>
