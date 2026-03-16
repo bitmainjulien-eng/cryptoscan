@@ -210,7 +210,7 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
 
     def _run_job(self, job_id, payload, api_key):
         """Exécute l'appel Anthropic dans un thread séparé."""
-        TOTAL_TIMEOUT = 150  # secondes — hard cap indépendant des retries urllib
+        TOTAL_TIMEOUT = 200  # secondes — doit couvrir jusqu'à 2 retries 429 (30s+45s) + appel réel
 
         with _jobs_lock:
             _jobs[job_id]["status"] = "running"
@@ -283,8 +283,8 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
             pass
 
     def _call_anthropic_with_retry(self, payload, api_key, max_retries=4):
-        wait_429 = 12   # délai initial rate-limit (plus long car quota réel)
-        wait_net = 2    # délai initial erreur réseau
+        wait_429 = 30   # attente initiale rate-limit
+        wait_net = 2    # attente initiale erreur réseau
         for attempt in range(max_retries):
             req = urllib.request.Request(
                 "https://api.anthropic.com/v1/messages",
@@ -296,23 +296,23 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
             req.add_header("anthropic-beta",    "web-search-2025-03-05")
 
             try:
-                # timeout=70 : socket inactivity timeout (par opération)
-                # Le hard cap total est géré par _run_job (95s)
                 with urllib.request.urlopen(req, timeout=110) as r:
                     return r.status, r.read()
             except urllib.error.HTTPError as e:
                 if e.code == 429:
+                    # Respecter le retry-after d'Anthropic sans le plafonner à 25s
                     retry_after = (e.headers.get("retry-after") or
                                    e.headers.get("x-ratelimit-reset-requests"))
                     if retry_after:
                         try:
-                            wait_429 = min(int(retry_after) + 1, 25)
+                            suggested = int(retry_after) + 2
+                            wait_429 = max(wait_429, min(suggested, 90))
                         except ValueError:
                             pass
                     ts = time.strftime("%H:%M:%S")
                     print(f"  [{ts}] Rate limit 429 — attente {wait_429}s ({attempt+1}/{max_retries})...", flush=True)
                     time.sleep(wait_429)
-                    wait_429 = min(wait_429 * 1.5, 25)
+                    wait_429 = min(int(wait_429 * 1.5), 90)
                     continue
                 else:
                     return e.code, e.read()
@@ -325,7 +325,7 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
                     continue
                 raise
 
-        msg = json.dumps({"error": {"message": f"Échec après {max_retries} tentatives."}}).encode()
+        msg = json.dumps({"error": {"message": f"Limite API dépassée — réessayez dans 1 minute."}}).encode()
         return 429, msg
 
     # ── HELPERS ───────────────────────────────────────────────────────────────

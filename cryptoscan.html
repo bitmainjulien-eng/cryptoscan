@@ -1690,6 +1690,10 @@ function startScan() {
     .then(function(research) {
       log('Recherche terminée — formatage ' + Math.round(research.length/100)/10 + 'k chars...', 'i');
       scanProgAdvance(55, 88);
+      // Pause 4s entre étape 1 et 2 — évite deux requêtes consécutives sur la même fenêtre quota
+      return new Promise(function(res) { setTimeout(function() { res(research); }, 4000); });
+    })
+    .then(function(research) {
       // Étape 2 : formatage JSON avec gros budget tokens
       var fmtMsg = 'Format ALL tokens from this research as compact JSON. Include EVERY token — minimum 18, ideally 22+. ONLY JSON, start with {:\n\nRESEARCH:\n' + research.slice(0, 9000) + '\n\n'
         + '{"tokens":[{"name":"Name","ticker":"TICK","chain":"Solana","age":"6h","score":7,"sources":["DexScreener"],'
