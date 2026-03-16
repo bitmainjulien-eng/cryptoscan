@@ -119,7 +119,7 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Space Mono',monospa
 .btn-rug-alert:hover{background:#ff0033;animation:none;transform:scale(1.01)}
 
 /* CARDS GRID */
-.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(370px,1fr));gap:14px}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(370px,100%),1fr));gap:14px}
 @keyframes cardIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 
 /* TOKEN CARD */
@@ -172,7 +172,7 @@ html,body{background:var(--bg);color:var(--txt);font-family:'Space Mono',monospa
 .ck-bad{color:var(--dng);background:var(--dng-d)}
 .mkt-blk{background:var(--bg3);padding:9px 11px;font-size:9px;color:var(--txt2);line-height:1.7;margin-bottom:9px}
 .curve-wrap{background:var(--bg3);padding:9px 11px;margin-bottom:7px}
-.curve-canvas{width:100%;display:block}
+.curve-canvas{width:100%;display:block;height:80px}
 .curve-leg{display:flex;gap:12px;margin-top:5px;flex-wrap:wrap}
 .curve-leg-i{font-size:8px}
 .sig{display:flex;align-items:center;gap:7px;font-size:9px;padding:2px 0}
@@ -1359,7 +1359,8 @@ function logoPlaceholder(sym, bg, col, size) {
 // ═══ PRICE CURVE ═══
 function drawCurve(canvas, prices, labels, score) {
   var dpr = window.devicePixelRatio || 1;
-  var W = canvas.offsetWidth, H = canvas.offsetHeight;
+  var W = canvas.offsetWidth || canvas.parentElement.offsetWidth || 320;
+  var H = canvas.offsetHeight || 80;
   if (!W || !H || prices.length < 2) return;
   canvas.width = W * dpr; canvas.height = H * dpr;
   var ctx = canvas.getContext('2d');
@@ -1690,16 +1691,15 @@ function startScan() {
       log('Recherche terminée — formatage ' + Math.round(research.length/100)/10 + 'k chars...', 'i');
       scanProgAdvance(55, 88);
       // Étape 2 : formatage JSON avec gros budget tokens
-      var fmtMsg = 'Format ALL tokens from this research as JSON. Include EVERY token found — minimum 20, ideally 25+. ONLY JSON start with {:\n\nRESEARCH:\n' + research.slice(0, 11000) + '\n\n'
+      var fmtMsg = 'Format ALL tokens from this research as compact JSON. Include EVERY token — minimum 18, ideally 22+. ONLY JSON, start with {:\n\nRESEARCH:\n' + research.slice(0, 9000) + '\n\n'
         + '{"tokens":[{"name":"Name","ticker":"TICK","chain":"Solana","age":"6h","score":7,"sources":["DexScreener"],'
-        + '"summary":"One sentence description.","stats":{"MKT CAP":"$1M","VOL 24H":"$200K","PRIX":"$0.01","LIQUID.":"$150K"},'
-        + '"signals":[["pos","good point"],["neg","risk"],["neu","neutral"]],'
-        + '"socials":{"twitter":"https://twitter.com/h","linkedin":"","youtube":"","website":"https://site.com"},'
-        + '"creator":{"twitter":"@h","twitter_followers":"5000","twitter_age":"1yr","previous_tokens":["T(result)"],"scam_history":"None","wallet_age":"1yr","doxxed":false,"team_size":"3","linkedin_verified":false,"red_flags":["r"],"green_flags":["g"]},'
-        + '"contract":{"address":"0x","verified":true,"renounced":false,"honeypot":false,"mint_disabled":true,"lp_locked":"6mo","top10_holders":"45%","dev_wallet":"3%","suspicious_txs":0,"linked_contracts":[]},'
-        + '"market_context":"Brief context.","logo_url":"",'
-        + '"price_curve":[1,1.2,1.5,1.3,1.8,2.1],"price_labels":["J","S1","S2","S3","M1","M2"]}]}\n\n'
-        + 'Rules: score 1-10. signals as arrays [type,text]. price_curve=6 realistic relative values. Include ALL 25+ tokens. Start with {:';
+        + '"summary":"One sentence.","stats":{"MKT CAP":"$1M","VOL 24H":"$200K","PRIX":"$0.01","LIQUID.":"$150K"},'
+        + '"signals":[["pos","good point"],["neg","risk"]],'
+        + '"socials":{"twitter":"https://twitter.com/h","website":"https://site.com"},'
+        + '"creator":{"twitter":"@h","twitter_followers":"5K","previous_tokens":["Tok1"],"scam_history":"None","doxxed":false,"red_flags":["r"],"green_flags":["g"]},'
+        + '"contract":{"address":"0x","verified":true,"honeypot":false,"lp_locked":"6mo","top10_holders":"45%","dev_wallet":"3%"},'
+        + '"logo_url":"","price_curve":[1,1.2,1.5,1.3,1.8,2.1]}]}\n\n'
+        + 'Rules: score 1-10. signals=[[type,text]]. price_curve=6 values. Keep values SHORT. Start with {:';
       return callAPI([{role:'user', content: fmtMsg}], false, 8000);
     })
     .then(function(jsonRaw) {

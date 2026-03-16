@@ -210,7 +210,7 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
 
     def _run_job(self, job_id, payload, api_key):
         """Exécute l'appel Anthropic dans un thread séparé."""
-        TOTAL_TIMEOUT = 95  # secondes — hard cap indépendant des retries urllib
+        TOTAL_TIMEOUT = 150  # secondes — hard cap indépendant des retries urllib
 
         with _jobs_lock:
             _jobs[job_id]["status"] = "running"
@@ -298,7 +298,7 @@ class CryptoHandler(http.server.BaseHTTPRequestHandler):
             try:
                 # timeout=70 : socket inactivity timeout (par opération)
                 # Le hard cap total est géré par _run_job (95s)
-                with urllib.request.urlopen(req, timeout=70) as r:
+                with urllib.request.urlopen(req, timeout=110) as r:
                     return r.status, r.read()
             except urllib.error.HTTPError as e:
                 if e.code == 429:
